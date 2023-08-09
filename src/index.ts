@@ -1,48 +1,34 @@
 import { client, xml } from '@xmpp/client';
 
+import debug from '@xmpp/debug';
 
 const SERVER_URL = 'alumchat.xyz';
 const TEST_USER = 'san191517test2';
 const TEST_PASSWORD = '12345678';
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+const xmpp = client({
+	service: `xmpp://${SERVER_URL}`,
+	domain: `${SERVER_URL}`,
+	username: TEST_USER,
+	password: TEST_PASSWORD,
+});
+
+debug(xmpp, true);
 
 
-// //Attempting connection
-// const client = XMPP.createClient({
-// 	jid: `${TEST_USER}@${SERVER_URL}`,
-	
-// 	password: '12345678',
-// 	// server: `${SERVER_URL}`,
-	
-// 	transports: {
-// 		// bosh: `http://${SERVER_URL}:5222/http-bind`,
-// 		websocket: `ws://${SERVER_URL}:5222/xmpp-websocket`,
-// 	}
-// });
+xmpp.on('error', (err) => {
+	console.error(err);
+});
+
+xmpp.on('offline', () => {
+	console.log('offline');
+});
 
 
-// client.on('session:started', () => {
-// 	console.log('session started');
-// 	// client.getRoster();
-// 	// client.sendPresence();
-// });
+xmpp.on('online', async (address) => {
+	await xmpp.send(xml('presence'));
+});
 
-// client.on('presence:error', () => {
-// 	console.log('presence error');
-// });
-
-
-
-// client.on('stream:error', () => {
-// 	console.log('error');
-// });
-
-
-// client.on('chat', msg => {
-// 	client.sendMessage({
-// 		to: msg.from,
-// 		body: 'You sent: ' + msg.body
-// 	});
-// });
-
-// client.connect();
+xmpp.start().catch(console.error);
