@@ -1,26 +1,48 @@
-import * as XMPP from 'stanza';
-const client = XMPP.createClient({
-	jid: 'echobot@example.com',
-	password: 'hunter2',
+import { client, xml } from '@xmpp/client';
 
-	// If you have a .well-known/host-meta.json file for your
-	// domain, the connection transport config can be skipped.
-	transports: {
-		websocket: 'wss://example.com:5281/xmpp-websocket',
-		bosh: 'https://example.com:5281/http-bind'
-	}
-});
+
+const SERVER_URL = 'alumchat.xyz';
+const TEST_USER = 'san191517test2';
+const TEST_PASSWORD = '12345678';
 
 
 
-client.on('session:started', async () => {
+// //Attempting connection
+// const client = XMPP.createClient({
+// 	jid: `${TEST_USER}@${SERVER_URL}`,
 	
-	client.sendPresence();
-});
+// 	password: '12345678',
+// 	// server: `${SERVER_URL}`,
+	
+// 	transports: {
+// 		// bosh: `http://${SERVER_URL}:5222/http-bind`,
+// 		websocket: `ws://${SERVER_URL}:5222/xmpp-websocket`,
+// 	}
+// });
 
-client.on('chat', msg => {
-	client.sendMessage({
-		to: msg.from,
-		body: 'You sent: ' + msg.body
-	});
-});
+
+// client.on('session:started', () => {
+// 	console.log('session started');
+// 	// client.getRoster();
+// 	// client.sendPresence();
+// });
+
+// client.on('presence:error', () => {
+// 	console.log('presence error');
+// });
+
+
+
+// client.on('stream:error', () => {
+// 	console.log('error');
+// });
+
+
+// client.on('chat', msg => {
+// 	client.sendMessage({
+// 		to: msg.from,
+// 		body: 'You sent: ' + msg.body
+// 	});
+// });
+
+// client.connect();
