@@ -32,7 +32,7 @@ const initializeXmppClient = (username: string, password: string) => {
 	});
 
 	xmpp.on('offline', () => {
-		console.log('offline');
+		console.log('Goodbye!');
 	});
 
 	xmpp.on('stanza', async (stanza) => {
@@ -49,11 +49,10 @@ const initializeXmppClient = (username: string, password: string) => {
 				}
 				return currentRosterUser;
 			});
-			// xmpp.close();
+			console.log(currentRoster.toString());
 		} else if (stanza.is('presence')) {
 			if (stanza.getAttr('from') !== TEST_USER + '@' + SERVER_URL + '/' + RESOURCE) {
 				const from = stanza.getAttr('from').split('/')[0];
-				console.log('FROM', from);
 				currentRoster.setUserStatus(from, 'online');
 			}
 		}
@@ -61,6 +60,7 @@ const initializeXmppClient = (username: string, password: string) => {
 	});
 
 	xmpp.on('online', async () => {
+		console.log('OPEN PROMPT');
 		await xmpp.send(xml('presence'));	// Send presence to all contacts
 		chatPrompt();
 	});
@@ -85,8 +85,13 @@ const chatPrompt = () => {
 		rl.close();
 		if (answer == '1') {
 			await xmpp.send(xml('iq', {type: 'get'}, xml('query', {xmlns: 'jabber:iq:roster'})));
+			chatPrompt();
+		} else if (answer == '5') {
+			
+			await xmpp.stop();
+			return rl.close();
 		}
-		chatPrompt();
+		
 	});
 };
 
