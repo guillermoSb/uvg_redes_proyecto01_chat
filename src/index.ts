@@ -90,6 +90,11 @@ const chatPrompt = () => {
 			
 			await xmpp.stop();
 			return rl.close();
+		} else if (answer == '100') {
+			// Remove account
+			await xmpp.send(xml('iq', { type: 'set' }, xml('query', { xmlns: 'jabber:iq:register' }, xml('remove'))));
+			await xmpp.stop();
+			return rl.close();
 		}
 		
 	});
