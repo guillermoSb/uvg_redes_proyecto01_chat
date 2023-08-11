@@ -2,21 +2,24 @@ import { Client, client, xml, } from '@xmpp/client';
 import readline from 'readline';
 import debug from '@xmpp/debug';
 import { RosterToUserListMapper } from './infrastructure/mapper/RosterMapper';
+import { Roster } from './domain/Roster';
 
 
 // -----------------  CONFIGURATION -----------------
 const SERVER_URL = 'alumchat.xyz';
 const TEST_USER = 'san191517test2';
 const TEST_PASSWORD = '12345678';
+const RESOURCE = 'macbook';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+const currentRoster = new Roster([]);
 // -----------------  CONFIGURATION -----------------
 
 
 const initializeXmppClient = (username: string, password: string) => {
 	xmpp = client({
 		service: `xmpp://${SERVER_URL}`,
-		domain: `${SERVER_URL}`,
-		resource: 'macbook',
+		domain: SERVER_URL,
+		resource: RESOURCE,
 		username,
 		password,
 		
@@ -34,9 +37,25 @@ const initializeXmppClient = (username: string, password: string) => {
 
 	xmpp.on('stanza', async (stanza) => {
 		if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
-			// console.log(stanza.toString());
-			const roster = RosterToUserListMapper.fromXmppResponse(stanza);
-			console.log(roster.toString());
+			const incomingRoster = RosterToUserListMapper.fromXmppResponse(stanza);
+			const currentUsers = currentRoster.users;
+			//Check if the user is already in the roster
+			const newUsers = incomingRoster.users.filter((user) => !currentUsers.some(currentUser => currentUser.jid === user.jid));
+			currentRoster.users = [...currentUsers, ...newUsers];
+			currentRoster.users.map((currentRosterUser) => {
+				const newUser = incomingRoster.users.find((incomingUser) => incomingUser.jid === currentRosterUser.jid);
+				if (newUser) {
+					currentRosterUser.name = newUser.name;
+				}
+				return currentRosterUser;
+			});
+			// xmpp.close();
+		} else if (stanza.is('presence')) {
+			if (stanza.getAttr('from') !== TEST_USER + '@' + SERVER_URL + '/' + RESOURCE) {
+				const from = stanza.getAttr('from').split('/')[0];
+				console.log('FROM', from);
+				currentRoster.setUserStatus(from, 'online');
+			}
 		}
 		// console.log('Incoming stanza: ', stanza.toString());
 	});
