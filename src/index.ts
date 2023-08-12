@@ -7,8 +7,8 @@ import { Roster } from './domain/Roster';
 
 // -----------------  CONFIGURATION -----------------
 const SERVER_URL = 'alumchat.xyz';
-const TEST_USER = 'san191517test2';
-const TEST_PASSWORD = '12345678';
+const TEST_USER = 'san191517test';
+const TEST_PASSWORD = '1234567';
 const RESOURCE = 'macbook';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const currentRoster = new Roster([]);
@@ -37,6 +37,7 @@ const initializeXmppClient = (username: string, password: string) => {
 
 	xmpp.on('stanza', async (stanza) => {
 		if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
+			
 			const incomingRoster = RosterToUserListMapper.fromXmppResponse(stanza);
 			const currentUsers = currentRoster.users;
 			//Check if the user is already in the roster
@@ -51,7 +52,15 @@ const initializeXmppClient = (username: string, password: string) => {
 			});
 			console.log(currentRoster.toString());
 		} else if (stanza.is('presence')) {
-			if (stanza.getAttr('from') !== TEST_USER + '@' + SERVER_URL + '/' + RESOURCE) {
+			
+			if (stanza.attrs.type === 'subscribe') {
+				// Accept all subscription requests
+				console.log('Accepting subscription request from: ', stanza.getAttr('from'));
+				await xmpp.send(xml('presence', {to: stanza.getAttr('from'), type: 'subscribed'}));
+			} else if (stanza.attrs.type === 'unavailable') {
+				const from = stanza.getAttr('from').split('/')[0];
+				currentRoster.setUserStatus(from, 'offline');
+			} else if (stanza.getAttr('from') !== TEST_USER + '@' + SERVER_URL + '/' + RESOURCE) {
 				const from = stanza.getAttr('from').split('/')[0];
 				currentRoster.setUserStatus(from, 'online');
 			}
@@ -60,7 +69,6 @@ const initializeXmppClient = (username: string, password: string) => {
 	});
 
 	xmpp.on('online', async () => {
-		console.log('OPEN PROMPT');
 		await xmpp.send(xml('presence'));	// Send presence to all contacts
 		chatPrompt();
 	});
@@ -86,6 +94,16 @@ const chatPrompt = () => {
 		if (answer == '1') {
 			await xmpp.send(xml('iq', {type: 'get'}, xml('query', {xmlns: 'jabber:iq:roster'})));
 			chatPrompt();
+		} else if (answer == '2') {
+			const rl2 = readline.createInterface({
+				input: process.stdin,
+				output: process.stdout,
+			});
+			rl2.question('Enter the contact jid: ', async (contactJid) => {
+				console.log(`You entered: ${contactJid}`);
+				await xmpp.send(xml('presence', {to: contactJid, type: 'subscribe'}));
+				chatPrompt();
+			});
 		} else if (answer == '5') {
 			
 			await xmpp.stop();
