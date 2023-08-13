@@ -2,18 +2,18 @@ export class User {
 	jid: string;
 	name: string;
 	status?: string;
-	resource?: string;
+	resources: string[];
 
 	constructor(
 		jid: string,
 		name: string,
 		status: string = 'offline',
-		// resource: string
+		resources: string[] = []
 	) {
 		this.jid = jid;
 		this.name = name;
 		this.status = status;
-		// this.resource = resource;
+		this.resources = resources;
 	}
 	
 
