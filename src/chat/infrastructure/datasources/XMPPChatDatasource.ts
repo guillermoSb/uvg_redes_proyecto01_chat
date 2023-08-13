@@ -4,14 +4,18 @@ import { ChatDatasource } from '../../domain/datasources/ChatDatasource';
 import { Roster } from '../../domain/entities/Roster';
 import { RosterMapper } from '../mapper/RosterMapper';
 export class XMPPChatDatasource implements ChatDatasource {
-	
+	public static readonly SERVER_URL = 'alumchat.xyz';
+	public static readonly RESOURCE = 'macbook';
+	private _currentId: string = '';
 	private xmpp: Client;	// Client that this datasource will use
+	private roster: Roster = new Roster([]);
 
 	// Listeners
 	private _onOnline: () => void = () => { };
 	private _onLoginError: (error: Error) => void = () => { };
 	private _onRosterReceived: (roster: Roster) => void = () => { };
 	private _onError: (error: Error) => void = () => { };
+	private _onPresenceReceived: (jid: string, status: string) => void = () => { };
 
 
 	constructor(id: string, password: string) {
@@ -22,6 +26,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 			username: id,
 			password: password,
 		});
+		this._currentId = id;
 	}
 
 	/**
@@ -84,10 +89,18 @@ export class XMPPChatDatasource implements ChatDatasource {
 		});
 		this.xmpp.on('stanza', async (stanza) => { 
 			// Presence
-			if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+			if (stanza.is('presence')) {
+				if (stanza.attrs.type === 'subscribe') {
+					return await this.xmpp.send(xml('presence', { to: stanza.getAttr('from'), type: 'subscribed' }));
+				} else if (stanza.attrs.type === 'unavailable') {
+					const from = stanza.getAttr('from').split('/')[0];
+					this._onPresenceReceived(from, 'offline');
+				} else if (stanza.getAttr('from') !== this._currentId + '@' + XMPPChatDatasource.SERVER_URL + '/' + XMPPChatDatasource.RESOURCE) {
+					const from = stanza.getAttr('from').split('/')[0];
+					this._onPresenceReceived(from, 'online');
+				}
 				// Accept all subscription requests
-				return await this.xmpp.send(xml('presence', { to: stanza.getAttr('from'), type: 'subscribed' }));
-			} 
+			}  
 
 			// Iq
 			if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
@@ -124,6 +137,10 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 	set onLoginError(onLoginError: (error: Error) => void) {
 		this._onLoginError = onLoginError;
+	}
+
+	set onPresenceReceived(onPresenceReceived: (jid: string, status: string) => void) {
+		this._onPresenceReceived = onPresenceReceived;
 	}
 	
 	

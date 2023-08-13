@@ -10,6 +10,8 @@ import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCas
  */
 export class CLIChat {
 	xmppChatDatasource?: XMPPChatDatasource;
+	roster: Roster = new Roster([]);
+
 
 	/**
 	 * Configure all listeners for the XMPP client
@@ -22,13 +24,20 @@ export class CLIChat {
 			this._chatPrompt();
 		};
 		this.xmppChatDatasource.onRosterReceived = async (roster: Roster) => {
-			console.log(roster.toString());
+			for (const user of roster.users) {
+				this.roster.addUserFromRoster(user);
+			}
+			console.log(this.roster.toString());
 		};
 		this.xmppChatDatasource.onError = () => {};
 
 		this.xmppChatDatasource.onLoginError = () => {
 			console.log('Could not login, try again');
 			this.login();
+		};
+
+		this.xmppChatDatasource.onPresenceReceived = (jid: string, status: string) => {
+			this.roster.setUserStatus(jid, status);
 		};
 		
 	}
