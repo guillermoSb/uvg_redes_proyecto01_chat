@@ -1,6 +1,6 @@
 import  Element  from 'ltx/src/Element';
-import { Roster } from '../../domain/Roster';
-import { User } from '../../domain/User';
+import { Roster } from '../../domain/entities/Roster';
+import { User } from '../../domain/entities/User';
 // import { User } from '../../domain/User';
 
 
@@ -8,7 +8,7 @@ interface XmppUser {
 	attrs: object;
 }
 
-export class RosterToUserListMapper { 
+export class RosterMapper { 
 	public static fromXmppResponse(response: Element): Roster {
 		const users = response.getChild('query')?.children;
 		if (!users) return new Roster([]);

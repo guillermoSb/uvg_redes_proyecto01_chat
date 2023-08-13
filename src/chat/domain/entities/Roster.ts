@@ -11,7 +11,7 @@ export class Roster {
 	 * Removes an user from the roster.
 	**/
 	public removeUserFromRoster(jid: string) {
-		this.users = this.users.filter((user) => user.jid !== jid);
+		this.users = this.users.filter((user) => user.id !== jid);
 	}
 
 
@@ -21,7 +21,7 @@ export class Roster {
 	 * @param status 
 	 */
 	public setUserStatus(jid: string, status: string) {
-		const user = this.users.find((user) => user.jid === jid);
+		const user = this.users.find((user) => user.id === jid);
 		if (!user) {
 			this.users.push(new User(jid, '', status));
 		}

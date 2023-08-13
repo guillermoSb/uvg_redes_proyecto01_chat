@@ -3,18 +3,18 @@
  * An user of the chat
  */
 export class User {
-	jid: string;
+	id: string;
 	name: string;
 	status?: string;
 	resources: string[];
 
 	constructor(
-		jid: string,
+		id: string,
 		name: string,
 		status: string = 'offline',
 		resources: string[] = []
 	) {
-		this.jid = jid;
+		this.id = id;
 		this.name = name;
 		this.status = status;
 		this.resources = resources;
@@ -26,6 +26,6 @@ export class User {
 	 * @returns {string}
 	 */
 	public toString(): string {
-		return `${this.jid} - ${this.status}`;
+		return `${this.id} - ${this.status}`;
 	}
 }
