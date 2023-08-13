@@ -12,5 +12,7 @@ export interface ChatDatasource {
 	addContact(id: string): Promise<void>
 
 	removeContact(id: string): Promise<void>
+
+	logout(): Promise<void>
 	
 }

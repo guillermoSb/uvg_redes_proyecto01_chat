@@ -2,7 +2,8 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
-import { GetRosterUseCase } from '../useCases/GetRosterUseCase';
+import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase } from '../useCases/useCases';
+
 
 /**
  * CLIChat
@@ -16,7 +17,6 @@ export class CLIChat {
 	 */
 	configureXmppListeners() {
 		if (!this.xmppChatDatasource) return;
-		const getRosterUseCase = new GetRosterUseCase(this.xmppChatDatasource);
 		this.xmppChatDatasource.onOnline = async () => {
 			console.log(chalk.green('You are now online'));
 			this._chatPrompt();
@@ -63,15 +63,45 @@ export class CLIChat {
 			const choice = parseInt(answer);
 			if (choice == 6) {
 				console.log(chalk.green('Logging out...'));
-				await this.xmppChatDatasource?.stop();
+				const logoutUseCase = new LogoutUseCase(this.xmppChatDatasource!);
+				await logoutUseCase.execute();
 				return rl.close();
 			}
 
 			if (choice == 1) {
-				await this.xmppChatDatasource?.getContacts();
+				const getRosterUseCase = new GetRosterUseCase(this.xmppChatDatasource!);
+				getRosterUseCase.execute();
+				rl.close();
+				return this._chatPrompt();
+			} else if (choice == 2) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the contact jid: ', async (contactJid) => {
+					const addContactUseCase = new AddContactUseCase(this.xmppChatDatasource!);
+					await addContactUseCase.execute(contactJid);
+					rl2.close();
+					return this._chatPrompt();
+				});
+			} else if (choice == 3) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the contact jid: ', async (contactJid) => {
+					rl2.close();
+					const removeContactUseCase = new RemoveContactUseCase(this.xmppChatDatasource!);
+					await removeContactUseCase.execute(contactJid);
+					return this._chatPrompt();
+				});
+			} else {
+				console.log(chalk.red('Invalid option'));
+				rl.close();
+				this._chatPrompt();
 			}
-			rl.close();
-			this._chatPrompt();
 		});
 
 	}

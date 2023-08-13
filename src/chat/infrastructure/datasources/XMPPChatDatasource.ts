@@ -7,10 +7,12 @@ export class XMPPChatDatasource implements ChatDatasource {
 	
 	private xmpp: Client;	// Client that this datasource will use
 
+	// Listeners
 	private _onOnline: () => void = () => { };
+	private _onLoginError: (error: Error) => void = () => { };
 	private _onRosterReceived: (roster: Roster) => void = () => { };
 	private _onError: (error: Error) => void = () => { };
-	private _onLoginError: (error: Error) => void = () => { };
+
 
 	constructor(id: string, password: string) {
 		this.xmpp = client({
@@ -32,18 +34,16 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 
-	/**
-	 * Stop the XMPP client
-	 */
-	public async stop() {
-		await this.xmpp.stop();
-	}
 
 	/**
 	 * Get the roster of the client
 	 */
 	async getContacts(): Promise<void> {
 		await this.xmpp.send(xml('iq', {type: 'get'}, xml('query', {xmlns: 'jabber:iq:roster'})));
+	}
+
+	async logout(): Promise<void> {
+		await this.xmpp.stop();		
 	}
 
 	/**
@@ -54,11 +54,23 @@ export class XMPPChatDatasource implements ChatDatasource {
 	sendMessage(to: string, message: string): Promise<void> {
 		throw new Error('Method not implemented.');
 	}
-	addContact(id: string): Promise<void> {
-		throw new Error('Method not implemented.');
+
+	/**
+	 * Adds a contact to the roster
+	 * @param id 
+	 */
+	async addContact(id: string): Promise<void> {
+		const to = id + '@alumchat.xyz';
+		await this.xmpp.send(xml('presence', { to, type: 'subscribe' }));
 	}
-	removeContact(id: string): Promise<void> {
-		throw new Error('Method not implemented.');
+
+	/**
+	 * Removes a contact
+	 * @param id 
+	 */
+	async removeContact(id: string): Promise<void> {
+		const to = id + '@alumchat.xyz';
+		return await this.xmpp.send(xml('iq', { type: 'set' }, xml('query', { xmlns: 'jabber:iq:roster' }, xml('item', { jid: to, subscription: 'remove' }))));
 	}
 
 
@@ -71,9 +83,24 @@ export class XMPPChatDatasource implements ChatDatasource {
 			this._onError(error);
 		});
 		this.xmpp.on('stanza', async (stanza) => { 
+			// Presence
+			if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+				// Accept all subscription requests
+				return await this.xmpp.send(xml('presence', { to: stanza.getAttr('from'), type: 'subscribed' }));
+			} 
+
+			// Iq
 			if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
 				const incomingRoster = RosterMapper.fromXmppResponse(stanza);
-				this._onRosterReceived(incomingRoster);
+				return this._onRosterReceived(incomingRoster);
+			} else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
+				const id = stanza.attrs.id;
+				const item = stanza.getChild('query')?.getChild('item');
+				const jid = item?.attrs.jid;
+				const ask = item?.attrs.ask;
+				if (ask === 'unsubscribe') {
+					await this.xmpp.send(xml('iq', { type: 'result', id, to: jid }));
+				}
 			}
 		});
 	}
@@ -98,5 +125,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	set onLoginError(onLoginError: (error: Error) => void) {
 		this._onLoginError = onLoginError;
 	}
+	
+	
 
 }
