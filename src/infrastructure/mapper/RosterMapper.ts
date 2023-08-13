@@ -11,7 +11,6 @@ interface XmppUser {
 export class RosterToUserListMapper { 
 	public static fromXmppResponse(response: Element): Roster {
 		const users = response.getChild('query')?.children;
-		console.log(users?.toString());
 		if (!users) return new Roster([]);
 		// check if users can be converted to an array of Element[]
 		const userList = users

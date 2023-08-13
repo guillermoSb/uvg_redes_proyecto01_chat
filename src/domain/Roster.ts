@@ -9,6 +9,14 @@ export class Roster {
 
 
 	/**
+	 * Removes an user from the rostre
+	**/
+	public removeUserFromRoster(jid: string) {
+		this.users = this.users.filter((user) => user.jid !== jid);
+	}
+
+
+	/**
 	 * Update an user status
 	 * @param jid 
 	 * @param status 
