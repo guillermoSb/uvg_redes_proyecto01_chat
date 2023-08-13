@@ -1,3 +1,7 @@
+
+/**
+ * An user of the chat
+ */
 export class User {
 	jid: string;
 	name: string;
@@ -17,7 +21,11 @@ export class User {
 	}
 	
 
-	public toString() {
+	/**
+	 * String representation of the user.
+	 * @returns {string}
+	 */
+	public toString(): string {
 		return `${this.jid} - ${this.status}`;
 	}
 }
