@@ -3,3 +3,7 @@ export * from './LogoutUseCase';
 export * from './AddContactUseCase';
 export * from './RemoveContactUseCase';
 export * from './UpdateStatusUseCase';
+export * from './JoinGroupUseCase';
+export * from './RemoveAccountUseCase';
+export * from './SendMessageUseCase';
+export * from './SendMessageToGroupUseCase';

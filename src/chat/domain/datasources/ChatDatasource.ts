@@ -9,6 +9,8 @@ export interface ChatDatasource {
 
 	sendMessage(to: string, message: string): Promise<void>
 
+	sendMessageToGroup(to: string, message: string): Promise<void>
+
 	addContact(id: string): Promise<void>
 
 	removeContact(id: string): Promise<void>
@@ -18,4 +20,6 @@ export interface ChatDatasource {
 	updateStatus(connectionStatus: string, status: string): Promise<void>
 
 	removeAccount(): Promise<void>
+
+	joingGroup(groupJid: string, nick: string): Promise<void>
 }

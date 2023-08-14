@@ -61,6 +61,17 @@ export class XMPPChatDatasource implements ChatDatasource {
 		return this.xmpp.send(xml('message', { to: to + '@alumchat.xyz', type: 'chat' }, xml('body', {}, message)));
 	}
 
+
+	/**
+	 * Sends a message to a group
+	 * @param to 
+	 * @param message 
+	 * @returns 
+	 */
+	sendMessageToGroup(to: string, message: string): Promise<void> {
+		return this.xmpp.send(xml('message', { to: to + '@conference.alumchat.xyz', type: 'groupchat' }, xml('body', {}, message)));
+	}
+
 	/**
 	 * Adds a contact to the roster
 	 * @param id 
@@ -156,6 +167,17 @@ export class XMPPChatDatasource implements ChatDatasource {
 				}
 			}
 		});
+	}
+
+
+	/**
+	 * Join a group
+	 * @param groupJid 
+	 * @param nick 
+	 */
+	async joingGroup(groupJid: string, nick: string): Promise<void> {
+		// send presence stanza to join group
+		await this.xmpp.send(xml('presence', { to: groupJid + '@conference.alumchat.xyz/' + nick }));
 	}
 
 	/**

@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
-import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase } from '../useCases/useCases';
+import { RemoveAccountUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase, JoinGroupUseCase, SendMessageUseCase, SendMessageToGroupUseCase } from '../useCases/useCases';
 
 
 /**
@@ -15,6 +15,7 @@ export class CLIChat {
 	currentStatus = '';
 	currentChat = '';
 	contactTyping = false;
+	groups = {};
 
 	/**
 	 * Configure all listeners for the XMPP client
@@ -48,9 +49,11 @@ export class CLIChat {
 				if (type === 'chat') {	
 					console.log(chalk.blueBright(`Message from ${from}: ${message}`));
 					this.contactTyping = false;
+				} else if (type === 'groupchat') {
+					console.log(chalk.blueBright(`Group Message from ${from}: ${message}`));
 				} else if (type == 'composing') {
 					if (!this.contactTyping) {
-						console.log(chalk.gray('Contact is typing...'));
+						console.log(chalk.gray(`${from} is typing...`));
 						this.contactTyping = true;
 					}
 				} else if (type == 'paused') {
@@ -94,9 +97,9 @@ export class CLIChat {
 		this._showMenu();
 		rl.question('Enter your command: ', async (answer) => {
 			const choice = parseInt(answer);
-			if (choice == 6) {
+			if (choice == 10) {
 				console.log(chalk.green('Logging out...'));
-				const logoutUseCase = new LogoutUseCase(this.xmppChatDatasource!);
+				const logoutUseCase = new RemoveAccountUseCase(this.xmppChatDatasource!);
 				await logoutUseCase.execute();
 				return rl.close();
 			}
@@ -181,14 +184,66 @@ export class CLIChat {
 							}
 							console.log(`You entered: ${answer}`);
 							rl3.close();
-							await this.xmppChatDatasource!.sendMessage(contactJid, answer);
+							const sendMessageUseCase = new SendMessageUseCase(this.xmppChatDatasource!);
+							await sendMessageUseCase.execute(contactJid, answer);
+							return chat(contactJid);
+						});
+					};
+					return chat(contactJid);
+				});
+			} else if (choice == 8) {
+				// ask for group jid and user Nick
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the group jid: ', async (groupJid) => {
+					rl2.close();
+					const rl3 = readline.createInterface({
+						input: process.stdin,
+						output: process.stdout,
+					});
+					rl3.question('Enter your nick: ', async (nick) => {
+						rl3.close();
+						const joinGroupUseCase = new JoinGroupUseCase(this.xmppChatDatasource!);
+						await joinGroupUseCase.execute(groupJid, nick);
+						return this._chatPrompt();
+					});
+				});
+			} else if (choice == 9) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the group jid: ', async (contactJid) => {
+					rl2.close();
+					const chat = async (contactJid: string) => {
+						const rl3 = readline.createInterface({
+							input: process.stdin,
+							output: process.stdout,
+						});
+						this.currentChat = contactJid + '@conference.alumchat.xyz';
+						rl3.question('Enter your message (leave blank to exit): ', async (answer) => {
+							if (answer === '') {
+								rl3.close();
+								return this._chatPrompt();
+							}
+							console.log(`You entered: ${answer}`);
+							rl3.close();
+							const sendMessageUseCase = new SendMessageToGroupUseCase(this.xmppChatDatasource!);
+							await sendMessageUseCase.execute(contactJid, answer);
 							return chat(contactJid);
 						});
 					};
 					return chat(contactJid);
 				});
 			} else if (choice == 100) {
-				await this.xmppChatDatasource!.removeAccount();
+				console.log(chalk.green('Removing account...'));
+				const removeAccountUseCase = new RemoveAccountUseCase(this.xmppChatDatasource!);
+				await removeAccountUseCase.execute();
+				return rl.close();
 			} else {
 				console.log(chalk.redBright('Invalid option'));
 				rl.close();
@@ -207,7 +262,9 @@ export class CLIChat {
 		5. Update custom status
 		6. Show contact details
 		7. Chat
-		8. Logout
+		8. Join Group
+		9. Chat in group
+		10. Logout
 		100. Remove account
 	`);
 	}
