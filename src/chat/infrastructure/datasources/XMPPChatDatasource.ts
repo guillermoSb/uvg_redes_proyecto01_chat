@@ -139,7 +139,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 			// Message
 			if (stanza.is('message')) {
-				const from = stanza.getAttr('from').split('/')[0];
+				const from = stanza.getAttr('from');
 				// check if has child composing
 				if (stanza.getChild('composing')) {
 					this._onMessageReceived(from, '', 'composing');

@@ -45,7 +45,8 @@ export class CLIChat {
 		};
 		
 		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
-			if (this.currentChat === from) {
+			
+			if (this.currentChat === from.split('/')[0]) {
 				if (type === 'chat') {	
 					console.log(chalk.blueBright(`Message from ${from}: ${message}`));
 					this.contactTyping = false;
@@ -230,7 +231,6 @@ export class CLIChat {
 								rl3.close();
 								return this._chatPrompt();
 							}
-							console.log(`You entered: ${answer}`);
 							rl3.close();
 							const sendMessageUseCase = new SendMessageToGroupUseCase(this.xmppChatDatasource!);
 							await sendMessageUseCase.execute(contactJid, answer);
