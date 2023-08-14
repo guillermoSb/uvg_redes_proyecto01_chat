@@ -1,4 +1,7 @@
+import chalk from 'chalk';
 import { User } from './User';
+import { table } from 'table';
+
 
 export class Roster {
 	users: User[];	
@@ -50,7 +53,43 @@ export class Roster {
 	 * @returns {string}
 	 */
 	public toString(): string {
-		return '\n' + this.users.map((user) => user.toString()).join('\n');
+		const data = [
+			'JID',
+			'Name',
+			'Connection Status',
+			'Status'
+		]
+		// statuses: chat, away, xa, dnd
+		
+		const users = this.users.map((user) => {
+			let connectionStatus;
+			if (user.connectionStatus === 'chat') {
+				connectionStatus = chalk.greenBright('online');
+			} else if (user.connectionStatus === 'away') {
+				connectionStatus = chalk.yellowBright('away');
+			} else if (user.connectionStatus === 'xa') {
+				connectionStatus = chalk.yellowBright('extended away');
+			} else if (user.connectionStatus === 'dnd') {
+				connectionStatus = chalk.redBright('do not disturb');
+			} else {
+				connectionStatus = chalk.redBright('offline');
+			}
+			return [
+				user.id,
+				user.name ?? '',
+				connectionStatus,
+				user.status ?? ''
+			]
+		});
+
+
+		
+		return `\n${table([data, ...users], {
+			header: {
+				content: chalk.green('Roster'),
+			}
+		})}\n`;
+		
 	}
 
 }

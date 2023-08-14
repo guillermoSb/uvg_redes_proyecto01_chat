@@ -28,7 +28,7 @@ export class CLIChat {
 			this._chatPrompt();
 		};
 		this.xmppChatDatasource.onRosterReceived = async (roster: Roster) => {
-			for (const user of roster.users) {
+			for (const user of roster.users) {				
 				this.roster.addUserFromRoster(user);
 			}
 			console.log(this.roster.toString());
@@ -41,6 +41,7 @@ export class CLIChat {
 		};
 
 		this.xmppChatDatasource.onPresenceReceived = (jid: string, connectionStatus: string, status?: string) => {
+			
 			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
 		
@@ -80,7 +81,7 @@ export class CLIChat {
 			console.log(`You entered: ${jid}`);
 			rl.question('Enter your password: ', async (password) => {
 				rl.close();
-				this.xmppChatDatasource = new XMPPChatDatasource('san191517t', '1234567');	// ! For now, we are hardcoding the user and password
+				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
 				this.configureXmppListeners();
 				await this.xmppChatDatasource.start({ debugMode: false });
 			});
@@ -130,6 +131,7 @@ export class CLIChat {
 				rl2.question('Enter the contact jid: ', async (contactJid) => {
 					rl2.close();
 					const removeContactUseCase = new RemoveContactUseCase(this.xmppChatDatasource!);
+					this.roster.removeUserFromRoster(contactJid + '@alumchat.xyz');
 					await removeContactUseCase.execute(contactJid);
 					return this._chatPrompt();
 				});

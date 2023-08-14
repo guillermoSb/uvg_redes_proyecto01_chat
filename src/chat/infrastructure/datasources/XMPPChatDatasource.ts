@@ -8,7 +8,6 @@ export class XMPPChatDatasource implements ChatDatasource {
 	public static readonly RESOURCE = 'macbook';
 	private _currentId: string = '';
 	private xmpp: Client;	// Client that this datasource will use
-	private roster: Roster = new Roster([]);
 
 	// Listeners
 	private _onOnline: () => void = () => { };
@@ -87,6 +86,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	 */
 	async removeContact(id: string): Promise<void> {
 		const to = id + '@alumchat.xyz';
+		// Remove from roster
 		return await this.xmpp.send(xml('iq', { type: 'set' }, xml('query', { xmlns: 'jabber:iq:roster' }, xml('item', { jid: to, subscription: 'remove' }))));
 	}
 
