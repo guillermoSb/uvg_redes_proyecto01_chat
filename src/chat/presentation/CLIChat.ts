@@ -1,3 +1,4 @@
+import { Message } from './../domain/entities/Message';
 import chalk from 'chalk';
 import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
@@ -16,7 +17,8 @@ export class CLIChat {
 	currentChat = '';
 	contactTyping = false;
 	groups = {};
-
+	chats: Map<string, Message[]> = new Map();
+	currentUser = '';
 	/**
 	 * Configure all listeners for the XMPP client
 	 * @returns 
@@ -46,8 +48,14 @@ export class CLIChat {
 		};
 		
 		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
-			if (this.currentChat === from.split('/')[0]) {
+			const fromJid = from.split('/')[0];
+			
+			if (this.currentChat === fromJid) {
 				if (type === 'chat') {	
+					if (!this.chats.has(fromJid)) {
+						this.chats.set(fromJid, []);
+					}
+					this.chats.get(fromJid)?.push(new Message(fromJid,this.currentUser, message, type));
 					console.log(chalk.blueBright(`Message from ${from}: ${message}`));
 					this.contactTyping = false;
 				} else if (type === 'groupchat') {
@@ -65,7 +73,15 @@ export class CLIChat {
 				} else {
 					this.contactTyping = false;
 				}
+			} else {
+					if (type == 'chat') {
+					if (!this.chats.has(fromJid)) {
+						this.chats.set(fromJid, []);
+					}
+					this.chats.get(fromJid)?.push(new Message(fromJid, this.currentUser, message, type));
+				}
 			}
+			
 		};
 	}
 
@@ -82,6 +98,7 @@ export class CLIChat {
 			rl.question('Enter your password: ', async (password) => {
 				rl.close();
 				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
+				this.currentUser = 'san191517test';
 				this.configureXmppListeners();
 				await this.xmppChatDatasource.start({ debugMode: false });
 			});
@@ -173,18 +190,28 @@ export class CLIChat {
 				});
 				rl2.question('Enter the contact jid: ', async (contactJid) => {
 					rl2.close();
+					this.currentChat = contactJid + '@alumchat.xyz';
+						const chatHistory = this.chats.get(this.currentChat);
+					for (const message of chatHistory ?? []) {
+							if (message.from != this.currentUser) {
+								console.log(message.toString());
+							} else {
+								console.log(`You: ${message.body}`);
+							}
+								
+						}
 					const chat = async (contactJid: string) => {
 						const rl3 = readline.createInterface({
 							input: process.stdin,
 							output: process.stdout,
 						});
-						this.currentChat = contactJid + '@alumchat.xyz';
+
 						rl3.question('Enter your message (leave blank to exit): ', async (answer) => {
 							if (answer === '') {
 								rl3.close();
 								return this._chatPrompt();
 							}
-							console.log(`You entered: ${answer}`);
+							this.chats.get(this.currentChat)?.push(new Message(this.currentUser, this.currentChat, answer, 'chat'));
 							rl3.close();
 							const sendMessageUseCase = new SendMessageUseCase(this.xmppChatDatasource!);
 							await sendMessageUseCase.execute(contactJid, answer);
