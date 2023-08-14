@@ -37,6 +37,11 @@ export class Roster {
 	 * @param status 
 	 */
 	public setUserConnectionStatus(jid: string, connectionStatus: string, status?: string) {
+
+		// ignore any jid from groupchat
+		if (jid.includes('@conference')) {
+			return;
+		}
 		
 		// console.log('SETTING CONNECTION STATUS', jid, connectionStatus, status);
 		const user = this.users.find((user) => user.id === jid);
