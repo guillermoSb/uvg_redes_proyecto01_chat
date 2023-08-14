@@ -59,6 +59,10 @@ export class CLIChat {
 					console.log(chalk.blueBright(`Message from ${from}: ${message}`));
 					this.contactTyping = false;
 				} else if (type === 'groupchat') {
+					if (!this.chats.has(fromJid)) {
+						this.chats.set(fromJid, []);
+					}
+					this.chats.get(fromJid)?.push(new Message(fromJid, this.currentUser, `${from}: ${message}`, type));
 					console.log(chalk.blueBright(`Group Message from ${from}: ${message}`));
 				} else if (type == 'composing') {
 					if (!this.contactTyping) {
@@ -74,11 +78,16 @@ export class CLIChat {
 					this.contactTyping = false;
 				}
 			} else {
-					if (type == 'chat') {
+				if (type == 'chat') {
 					if (!this.chats.has(fromJid)) {
 						this.chats.set(fromJid, []);
 					}
 					this.chats.get(fromJid)?.push(new Message(fromJid, this.currentUser, message, type));
+				} else if (type == 'groupchat') {
+					if (!this.chats.has(fromJid)) {
+						this.chats.set(fromJid, []);
+					}
+					this.chats.get(fromJid)?.push(new Message(fromJid, this.currentUser, `${from}: ${message}`, type));
 				}
 			}
 			
@@ -191,15 +200,14 @@ export class CLIChat {
 				rl2.question('Enter the contact jid: ', async (contactJid) => {
 					rl2.close();
 					this.currentChat = contactJid + '@alumchat.xyz';
-						const chatHistory = this.chats.get(this.currentChat);
+					const chatHistory = this.chats.get(this.currentChat);
 					for (const message of chatHistory ?? []) {
 							if (message.from != this.currentUser) {
 								console.log(message.toString());
 							} else {
 								console.log(`You: ${message.body}`);
 							}
-								
-						}
+					}
 					const chat = async (contactJid: string) => {
 						const rl3 = readline.createInterface({
 							input: process.stdin,
@@ -248,18 +256,27 @@ export class CLIChat {
 				});
 				rl2.question('Enter the group jid: ', async (contactJid) => {
 					rl2.close();
+					this.currentChat = contactJid + '@conference.alumchat.xyz';
+					const chatHistory = this.chats.get(this.currentChat);
+					for (const message of chatHistory ?? []) {
+							if (message.from != this.currentUser) {
+								console.log(message.toString());
+							} else {
+								console.log(`You: ${message.body}`);
+							}
+					}
 					const chat = async (contactJid: string) => {
 						const rl3 = readline.createInterface({
 							input: process.stdin,
 							output: process.stdout,
 						});
-						this.currentChat = contactJid + '@conference.alumchat.xyz';
 						rl3.question('Enter your message (leave blank to exit): ', async (answer) => {
 							if (answer === '') {
 								rl3.close();
 								return this._chatPrompt();
 							}
 							rl3.close();
+							this.chats.get(this.currentChat)?.push(new Message(this.currentUser, this.currentChat, answer, 'groupchat'));
 							const sendMessageUseCase = new SendMessageToGroupUseCase(this.xmppChatDatasource!);
 							await sendMessageUseCase.execute(contactJid, answer);
 							return chat(contactJid);
