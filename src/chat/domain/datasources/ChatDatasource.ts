@@ -16,4 +16,6 @@ export interface ChatDatasource {
 	logout(): Promise<void>
 
 	updateStatus(connectionStatus: string, status: string): Promise<void>
+
+	removeAccount(): Promise<void>
 }

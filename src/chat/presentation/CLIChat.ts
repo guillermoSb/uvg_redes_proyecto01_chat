@@ -187,6 +187,8 @@ export class CLIChat {
 					};
 					return chat(contactJid);
 				});
+			} else if (choice == 100) {
+				await this.xmppChatDatasource!.removeAccount();
 			} else {
 				console.log(chalk.redBright('Invalid option'));
 				rl.close();

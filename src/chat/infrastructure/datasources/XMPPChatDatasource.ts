@@ -158,6 +158,13 @@ export class XMPPChatDatasource implements ChatDatasource {
 		});
 	}
 
+	/**
+	 * Removes an user account
+	 */
+	async removeAccount(): Promise<void> {
+		await this.xmpp.send(xml('iq', { type: 'set' }, xml('query', { xmlns: 'jabber:iq:register' }, xml('remove'))));
+	}
+
 
 	// Setters for listeners
 
