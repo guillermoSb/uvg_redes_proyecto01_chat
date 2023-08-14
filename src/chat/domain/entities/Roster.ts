@@ -37,6 +37,7 @@ export class Roster {
 	 * @param status 
 	 */
 	public setUserConnectionStatus(jid: string, connectionStatus: string, status?: string) {
+		
 		// console.log('SETTING CONNECTION STATUS', jid, connectionStatus, status);
 		const user = this.users.find((user) => user.id === jid);
 		if (!user) {
@@ -46,6 +47,16 @@ export class Roster {
 			user.connectionStatus = connectionStatus;
 			user.status = status;
 		}
+	}
+
+
+	/**
+	 * Get an user from the roster
+	 * @param jid 
+	 */
+	public getUserFromRoster(jid: string): User | undefined {
+		return this.users.find((user) => user.id === jid);
+
 	}
 
 	/**
@@ -63,7 +74,7 @@ export class Roster {
 		
 		const users = this.users.map((user) => {
 			let connectionStatus;
-			if (user.connectionStatus === 'chat') {
+			if (user.connectionStatus === 'online') {
 				connectionStatus = chalk.greenBright('online');
 			} else if (user.connectionStatus === 'away') {
 				connectionStatus = chalk.yellowBright('away');

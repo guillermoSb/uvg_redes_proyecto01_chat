@@ -191,6 +191,24 @@ export class CLIChat {
 					await updateStatusUseCase.execute(this.currentConnectionStatus, this.currentStatus);
 					return this._chatPrompt();
 				});
+			} else if (choice == 6) {
+				// ask for an user to find on the roster
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the contact jid: ', async (contactJid) => {
+					rl2.close();
+					const user = this.roster.getUserFromRoster(contactJid + '@alumchat.xyz');
+					if (!user) {
+						this._displayError('User not found');
+						return this._chatPrompt();
+					}
+					console.log(user.toString());
+					return this._chatPrompt();
+				});
+				
 			} else if (choice == 7) {
 				rl.close();
 				const rl2 = readline.createInterface({
