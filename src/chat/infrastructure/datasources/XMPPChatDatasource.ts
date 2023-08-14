@@ -16,6 +16,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	private _onRosterReceived: (roster: Roster) => void = () => { };
 	private _onError: (error: Error) => void = () => { };
 	private _onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void = () => { };
+	private _onMessageReceived: (from: string, message: string) => void = () => { };
 
 
 	constructor(id: string, password: string) {
@@ -57,7 +58,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	 * @param message 
 	 */
 	sendMessage(to: string, message: string): Promise<void> {
-		throw new Error('Method not implemented.');
+		return this.xmpp.send(xml('message', { to: to + '@alumchat.xyz', type: 'chat' }, xml('body', {}, message)));
 	}
 
 	/**
@@ -89,6 +90,9 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 
+	/**
+	 * Attach the listeners to the xmpp client
+	 */
 	public async attachListeners() {
 		console.log('attached listeners');
 		this.xmpp.on('online', async () => {
@@ -122,6 +126,15 @@ export class XMPPChatDatasource implements ChatDatasource {
 				}
 			}  
 
+			// Message
+			if (stanza.is('message')) {
+				if (stanza.getChild('body') && stanza.attrs.type === 'chat') {
+					const from = stanza.getAttr('from').split('/')[0];
+					const body = stanza.getChild('body')?.getText();
+					this._onMessageReceived(from, body ?? '');
+				}
+			}
+
 			// Iq
 			if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
 				const incomingRoster = RosterMapper.fromXmppResponse(stanza);
@@ -137,6 +150,9 @@ export class XMPPChatDatasource implements ChatDatasource {
 			}
 		});
 	}
+
+
+	// Setters for listeners
 
 
 	set onRosterReceived(onRosterReceived: (roster: Roster) => Promise<void>) {
@@ -162,7 +178,10 @@ export class XMPPChatDatasource implements ChatDatasource {
 	set onPresenceReceived(onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void) {
 		this._onPresenceReceived = onPresenceReceived;
 	}
-	
-	
+
+	set onMessageReceived(onMessageReceived: (from: string, message: string) => void) {
+		this._onMessageReceived = onMessageReceived;
+	}
+
 
 }

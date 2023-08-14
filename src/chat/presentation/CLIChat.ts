@@ -41,6 +41,9 @@ export class CLIChat {
 			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
 		
+		this.xmppChatDatasource.onMessageReceived = (from: string, message: string) => {
+			console.log(chalk.blueBright(`Message from ${from}: ${message}`));
+		};
 	}
 
 	/**
