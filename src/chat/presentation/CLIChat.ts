@@ -2,8 +2,7 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
-import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase } from '../useCases/useCases';
-import { UpdateConnectionStatusUseCase } from '../useCases/UpdateConnectionStatusUseCase';
+import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase } from '../useCases/useCases';
 
 
 /**
@@ -12,7 +11,8 @@ import { UpdateConnectionStatusUseCase } from '../useCases/UpdateConnectionStatu
 export class CLIChat {
 	xmppChatDatasource?: XMPPChatDatasource;
 	roster: Roster = new Roster([]);
-
+	currentConnectionStatus = 'chat';
+	currentStatus = '';
 
 	/**
 	 * Configure all listeners for the XMPP client
@@ -115,13 +115,31 @@ export class CLIChat {
 				});
 				rl2.question('Enter the new status (chat, away, xa, dnd): ', async (connectionStatus) => {
 					rl2.close();
-					const updateStatusUseCase = new UpdateConnectionStatusUseCase(this.xmppChatDatasource!);
-					await updateStatusUseCase.execute(connectionStatus);
+					if (connectionStatus !== 'chat' && connectionStatus !== 'away' && connectionStatus !== 'xa' && connectionStatus !== 'dnd') {
+						this._displayError('Invalid status');
+						return this._chatPrompt();
+					}
+					this.currentConnectionStatus = connectionStatus;
+					const updateStatusUseCase = new UpdateStatusUseCase(this.xmppChatDatasource!);
+					await updateStatusUseCase.execute(this.currentConnectionStatus, this.currentStatus);
+					return this._chatPrompt();
+				});
+			} else if (choice == 5) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter your new custom status: ', async (status) => {
+					rl2.close();
+					this.currentStatus = status;
+					const updateStatusUseCase = new UpdateStatusUseCase(this.xmppChatDatasource!);
+					await updateStatusUseCase.execute(this.currentConnectionStatus, this.currentStatus);
 					return this._chatPrompt();
 				});
 			}
 			else {
-				console.log(chalk.red('Invalid option'));
+				console.log(chalk.redBright('Invalid option'));
 				rl.close();
 				this._chatPrompt();
 			}
@@ -134,11 +152,16 @@ export class CLIChat {
 		1. Show roster
 		2. Add contact
 		3. Remove contact
-		4. Update status
-		5. Show contact details
-		5. Chat
-		6. Logout
+		4. Update connection status
+		5. Update custom status
+		6. Show contact details
+		7. Chat
+		8. Logout
 		100. Remove account
 	`);
+	}
+
+	private _displayError(error: string) {
+		console.error(chalk.redBright(error));
 	}
 }

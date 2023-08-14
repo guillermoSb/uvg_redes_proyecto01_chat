@@ -80,11 +80,12 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 
 	/**
-	 * Update a connection status
-	 * @param connectionStatus 
+	 * Update user status
+	 * @param connectionStatus
+	 * @param status 
 	 */
-	async updateConnectionStatus(connectionStatus: string): Promise<void> {
-		await this.xmpp.send(xml('presence', {}, xml('show', {}, connectionStatus)));
+	async updateStatus(connectionStatus: string, status: string): Promise<void> {
+		await this.xmpp.send(xml('presence', {}, xml('status', {}, status), xml('show', {}, connectionStatus)));
 	}
 
 
