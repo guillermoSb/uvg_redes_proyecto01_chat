@@ -13,6 +13,8 @@ export class CLIChat {
 	roster: Roster = new Roster([]);
 	currentConnectionStatus = 'chat';
 	currentStatus = '';
+	currentChat = '';
+	contactTyping = false;
 
 	/**
 	 * Configure all listeners for the XMPP client
@@ -41,8 +43,25 @@ export class CLIChat {
 			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
 		
-		this.xmppChatDatasource.onMessageReceived = (from: string, message: string) => {
-			console.log(chalk.blueBright(`Message from ${from}: ${message}`));
+		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
+			if (this.currentChat === from) {
+				if (type === 'chat') {	
+					console.log(chalk.blueBright(`Message from ${from}: ${message}`));
+					this.contactTyping = false;
+				} else if (type == 'composing') {
+					if (!this.contactTyping) {
+						console.log(chalk.gray('Contact is typing...'));
+						this.contactTyping = true;
+					}
+				} else if (type == 'paused') {
+					if (this.contactTyping) {
+						console.log(chalk.gray('Contact stopped typing...'));
+						this.contactTyping = false;
+					}
+				} else {
+					this.contactTyping = false;
+				}
+			}
 		};
 	}
 
@@ -67,6 +86,7 @@ export class CLIChat {
 
 	
 	private _chatPrompt() {
+		this.currentChat = '';
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
@@ -140,8 +160,34 @@ export class CLIChat {
 					await updateStatusUseCase.execute(this.currentConnectionStatus, this.currentStatus);
 					return this._chatPrompt();
 				});
-			}
-			else {
+			} else if (choice == 7) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the contact jid: ', async (contactJid) => {
+					rl2.close();
+					const chat = async (contactJid: string) => {
+						const rl3 = readline.createInterface({
+							input: process.stdin,
+							output: process.stdout,
+						});
+						this.currentChat = contactJid + '@alumchat.xyz';
+						rl3.question('Enter your message (leave blank to exit): ', async (answer) => {
+							if (answer === '') {
+								rl3.close();
+								return this._chatPrompt();
+							}
+							console.log(`You entered: ${answer}`);
+							rl3.close();
+							await this.xmppChatDatasource!.sendMessage(contactJid, answer);
+							return chat(contactJid);
+						});
+					};
+					return chat(contactJid);
+				});
+			} else {
 				console.log(chalk.redBright('Invalid option'));
 				rl.close();
 				this._chatPrompt();

@@ -16,7 +16,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	private _onRosterReceived: (roster: Roster) => void = () => { };
 	private _onError: (error: Error) => void = () => { };
 	private _onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void = () => { };
-	private _onMessageReceived: (from: string, message: string) => void = () => { };
+	private _onMessageReceived: (from: string, message: string, type: string) => void = () => { };
 
 
 	constructor(id: string, password: string) {
@@ -128,10 +128,17 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 			// Message
 			if (stanza.is('message')) {
-				if (stanza.getChild('body') && stanza.attrs.type === 'chat') {
-					const from = stanza.getAttr('from').split('/')[0];
+				const from = stanza.getAttr('from').split('/')[0];
+				// check if has child composing
+				if (stanza.getChild('composing')) {
+					this._onMessageReceived(from, '', 'composing');
+				} else if (stanza.getChild('body')) {
 					const body = stanza.getChild('body')?.getText();
-					this._onMessageReceived(from, body ?? '');
+					this._onMessageReceived(from, body ?? '', stanza.attrs.type);
+				} else if (stanza.getChild('active')) {
+					this._onMessageReceived(from, '', 'active');
+				} else if (stanza.getChild('inactive')) {
+					this._onMessageReceived(from, '', 'inactive');
 				}
 			}
 
@@ -179,7 +186,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 		this._onPresenceReceived = onPresenceReceived;
 	}
 
-	set onMessageReceived(onMessageReceived: (from: string, message: string) => void) {
+	set onMessageReceived(onMessageReceived: (from: string, message: string, type:string) => void) {
 		this._onMessageReceived = onMessageReceived;
 	}
 
