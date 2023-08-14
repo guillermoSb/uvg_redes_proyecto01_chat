@@ -5,19 +5,18 @@
 export class User {
 	id: string;
 	name: string;
+	connectionStatus?: string;
 	status?: string;
-	resources: string[];
-
 	constructor(
 		id: string,
 		name: string,
-		status: string = 'offline',
-		resources: string[] = []
+		connectionStatus: string = 'offline',
+		status?: string 
 	) {
 		this.id = id;
 		this.name = name;
+		this.connectionStatus = connectionStatus;
 		this.status = status;
-		this.resources = resources;
 	}
 	
 
@@ -26,6 +25,10 @@ export class User {
 	 * @returns {string}
 	 */
 	public toString(): string {
-		return `${this.id} - ${this.status}`;
+		let userToString = `${this.id} - ${this.connectionStatus}`;
+		if (this.status) {
+			userToString += ` - ${this.status}`;
+		}
+		return userToString;
 	}
 }

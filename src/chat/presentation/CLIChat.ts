@@ -3,6 +3,7 @@ import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
 import { LogoutUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase } from '../useCases/useCases';
+import { UpdateConnectionStatusUseCase } from '../useCases/UpdateConnectionStatusUseCase';
 
 
 /**
@@ -36,8 +37,8 @@ export class CLIChat {
 			this.login();
 		};
 
-		this.xmppChatDatasource.onPresenceReceived = (jid: string, status: string) => {
-			this.roster.setUserStatus(jid, status);
+		this.xmppChatDatasource.onPresenceReceived = (jid: string, connectionStatus: string, status?: string) => {
+			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
 		
 	}
@@ -106,7 +107,20 @@ export class CLIChat {
 					await removeContactUseCase.execute(contactJid);
 					return this._chatPrompt();
 				});
-			} else {
+			} else if (choice == 4) {
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the new status (chat, away, xa, dnd): ', async (connectionStatus) => {
+					rl2.close();
+					const updateStatusUseCase = new UpdateConnectionStatusUseCase(this.xmppChatDatasource!);
+					await updateStatusUseCase.execute(connectionStatus);
+					return this._chatPrompt();
+				});
+			}
+			else {
 				console.log(chalk.red('Invalid option'));
 				rl.close();
 				this._chatPrompt();
@@ -120,7 +134,8 @@ export class CLIChat {
 		1. Show roster
 		2. Add contact
 		3. Remove contact
-		4. Show contact details
+		4. Update status
+		5. Show contact details
 		5. Chat
 		6. Logout
 		100. Remove account

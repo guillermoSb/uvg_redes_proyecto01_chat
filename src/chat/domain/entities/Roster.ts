@@ -30,14 +30,17 @@ export class Roster {
 	/**
 	 * Update an user status.
 	 * @param jid 
+	 * @param connectionStatus 
 	 * @param status 
 	 */
-	public setUserStatus(jid: string, status: string) {
+	public setUserConnectionStatus(jid: string, connectionStatus: string, status?: string) {
+		// console.log('SETTING CONNECTION STATUS', jid, connectionStatus, status);
 		const user = this.users.find((user) => user.id === jid);
 		if (!user) {
-			this.users.push(new User(jid, '', status));
+			this.users.push(new User(jid, '', connectionStatus, status));
 		}
 		if (user) {
+			user.connectionStatus = connectionStatus;
 			user.status = status;
 		}
 	}

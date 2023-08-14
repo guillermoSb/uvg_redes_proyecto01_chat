@@ -14,5 +14,7 @@ export interface ChatDatasource {
 	removeContact(id: string): Promise<void>
 
 	logout(): Promise<void>
+
+	updateConnectionStatus(connectionStatus: string): Promise<void>
 	
 }

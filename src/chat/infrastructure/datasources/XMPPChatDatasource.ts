@@ -15,7 +15,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	private _onLoginError: (error: Error) => void = () => { };
 	private _onRosterReceived: (roster: Roster) => void = () => { };
 	private _onError: (error: Error) => void = () => { };
-	private _onPresenceReceived: (jid: string, status: string) => void = () => { };
+	private _onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void = () => { };
 
 
 	constructor(id: string, password: string) {
@@ -79,6 +79,15 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 
+	/**
+	 * Update a connection status
+	 * @param connectionStatus 
+	 */
+	async updateConnectionStatus(connectionStatus: string): Promise<void> {
+		await this.xmpp.send(xml('presence', {}, xml('show', {}, connectionStatus)));
+	}
+
+
 	public async attachListeners() {
 		console.log('attached listeners');
 		this.xmpp.on('online', async () => {
@@ -91,15 +100,25 @@ export class XMPPChatDatasource implements ChatDatasource {
 			// Presence
 			if (stanza.is('presence')) {
 				if (stanza.attrs.type === 'subscribe') {
-					return await this.xmpp.send(xml('presence', { to: stanza.getAttr('from'), type: 'subscribed' }));
-				} else if (stanza.attrs.type === 'unavailable') {
-					const from = stanza.getAttr('from').split('/')[0];
-					this._onPresenceReceived(from, 'offline');
+					return await this.xmpp.send(xml('presence', { to: stanza.getAttr('from'), type: 'subscribed' })); // Accept all subscription requests
 				} else if (stanza.getAttr('from') !== this._currentId + '@' + XMPPChatDatasource.SERVER_URL + '/' + XMPPChatDatasource.RESOURCE) {
 					const from = stanza.getAttr('from').split('/')[0];
-					this._onPresenceReceived(from, 'online');
+					let status: string | null = null;
+					let connectionStatus = 'offline';
+					if (stanza.getChild('status')) {
+						status = stanza.getChild('status')?.getText() ?? null;
+					}
+					if (stanza.attrs.type === 'unavailable') {
+						connectionStatus = 'offline';
+					} else {
+						connectionStatus = 'online';
+					}
+					if (stanza.getChild('show')) {
+					
+						connectionStatus = stanza.getChild('show')?.getText() ?? 'offline';
+					}
+					this._onPresenceReceived(from, connectionStatus, status ?? undefined);
 				}
-				// Accept all subscription requests
 			}  
 
 			// Iq
@@ -139,7 +158,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 		this._onLoginError = onLoginError;
 	}
 
-	set onPresenceReceived(onPresenceReceived: (jid: string, status: string) => void) {
+	set onPresenceReceived(onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void) {
 		this._onPresenceReceived = onPresenceReceived;
 	}
 	
