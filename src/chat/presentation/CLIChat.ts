@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
-import { RemoveAccountUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase, JoinGroupUseCase, SendMessageUseCase, SendMessageToGroupUseCase } from '../useCases/useCases';
+import { RemoveAccountUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase, JoinGroupUseCase, SendMessageUseCase, SendMessageToGroupUseCase, LogoutUseCase } from '../useCases/useCases';
 
 
 /**
@@ -126,7 +126,7 @@ export class CLIChat {
 			const choice = parseInt(answer);
 			if (choice == 10) {
 				console.log(chalk.green('Logging out...'));
-				const logoutUseCase = new RemoveAccountUseCase(this.xmppChatDatasource!);
+				const logoutUseCase = new LogoutUseCase(this.xmppChatDatasource!);
 				await logoutUseCase.execute();
 				return rl.close();
 			}
