@@ -50,6 +50,7 @@ export class CLIChat {
 		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
 			const fromJid = from.split('/')[0];
 			
+			
 			if (this.currentChat === fromJid) {
 				if (type === 'chat') {	
 					if (!this.chats.has(fromJid)) {
@@ -79,11 +80,13 @@ export class CLIChat {
 				}
 			} else {
 				if (type == 'chat') {
+					console.log(chalk.bgGray('\nNew private message from ' + fromJid))
 					if (!this.chats.has(fromJid)) {
 						this.chats.set(fromJid, []);
 					}
 					this.chats.get(fromJid)?.push(new Message(fromJid, this.currentUser, message, type));
 				} else if (type == 'groupchat') {
+					console.log(chalk.bgGray('\nNew group message on: ' + fromJid))
 					if (!this.chats.has(fromJid)) {
 						this.chats.set(fromJid, []);
 					}
