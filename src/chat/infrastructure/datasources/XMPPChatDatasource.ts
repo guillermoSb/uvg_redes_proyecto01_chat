@@ -6,7 +6,7 @@ import { Roster } from '../../domain/entities/Roster';
 import { RosterMapper } from '../mapper/RosterMapper';
 import { VCardMapper } from '../mapper/VCardMapper';
 import { VCard } from '../../domain/entities/VCard';
-const { Strophe } = require('strophe.js');
+import net from 'net';
 
 export class XMPPChatDatasource implements ChatDatasource {
 	public static readonly SERVER_URL = 'alumchat.xyz';
@@ -37,37 +37,34 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 	public register(username: string, password: string) {
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';	// Accept self-signed certificates
+		// cliChat.register('san191517newuser@alumchat.xyz', '123456');
+		const xmppServer = 'alumchat.xyz';
+		const xmppPort = 5222;
+		const registrationStanza = `
+			<iq type='set' id='register_id'>
+				<query xmlns='jabber:iq:register'>
+					<username>${username}</username>
+					<password>${password}</password>
+				</query>
+			</iq>
+		`;
 
-	// console.log('register user');
-	const connection = new Strophe.Connection('xmpp://alumchat.xyz:5222');
-		connection.connect('alumchat.xyz', null, function (status: any) {
-		console.log(status)
-  if (status === Strophe.Status.CONNECTED) {
-    console.log('Connected to XMPP server');
-    
-    // Registration IQ stanza
-    const registrationIQ = $iq({
-      type: 'set',
-      to: 'alumchat.xyz'
-    }).c('query', { xmlns: 'jabber:iq:register' })
-      .c('username').t(username).up()
-      .c('password').t(password);
-    
-    connection.sendIQ(registrationIQ, function (response: any) {
-      if (response && response.getAttribute('type') === 'result') {
-        console.log('Registration successful');
-      } else {
-        console.log('Registration failed');
-      }
-      
-      // Disconnect after registration attempt
-      connection.disconnect();
-    });
-  } else {
-    console.log('Failed to connect to XMPP server');
-  }
-	});
+		const socket = new net.Socket();
+
+		socket.connect({port: xmppPort, host: xmppServer}, () => {
+			socket.write(`<stream:stream to="'alumchat.xyz'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" version="1.0">`)
+			socket.write(registrationStanza)
+		
+		});
+		socket.on('error', (err) => {
+			console.log(err)
+		});
+		socket.on('data', (data) => {
+			socket.end()
+		})
+		socket.on('end', () => {
+			console.log('User registered, you can now login')
+		})
 	}
 
 	

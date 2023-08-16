@@ -1,6 +1,6 @@
 
 
-// Vcard class
+// Vcard definition
 export class VCard {
 		constructor(
 				public name: string,

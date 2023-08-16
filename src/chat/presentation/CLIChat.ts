@@ -114,8 +114,8 @@ export class CLIChat {
 			console.log(`You entered: ${jid}`);
 			rl.question('Enter your password: ', async (password) => {
 				rl.close();
-				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
-				this.currentUser = 'san191517test';
+				this.xmppChatDatasource = new XMPPChatDatasource(jid, password);	// ! For now, we are hardcoding the user and password
+				this.currentUser = jid;
 				this.configureXmppListeners();
 
 				await this.xmppChatDatasource.start({ debugMode: false });
@@ -123,10 +123,19 @@ export class CLIChat {
 		});
 	}
 
-	async register(username: string, password: string) {
-		this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
-
-		this.xmppChatDatasource?.register(username, password);
+	async register() {
+		const rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+		rl.question('Enter the username: ', async (username) => {
+			
+			rl.question('Enter your password: ', async (password) => {
+				rl.close();
+				this.xmppChatDatasource = new XMPPChatDatasource(username, password);
+				this.xmppChatDatasource.register(username, password);
+			});
+		});
 	}
 
 	
