@@ -1,8 +1,13 @@
 import debug from '@xmpp/debug';
 import { Client, client, xml } from '@xmpp/client';
+
 import { ChatDatasource } from '../../domain/datasources/ChatDatasource';
 import { Roster } from '../../domain/entities/Roster';
 import { RosterMapper } from '../mapper/RosterMapper';
+import { VCardMapper } from '../mapper/VCardMapper';
+import { VCard } from '../../domain/entities/VCard';
+const { Strophe } = require('strophe.js');
+
 export class XMPPChatDatasource implements ChatDatasource {
 	public static readonly SERVER_URL = 'alumchat.xyz';
 	public static readonly RESOURCE = 'macbook';
@@ -16,6 +21,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 	private _onError: (error: Error) => void = () => { };
 	private _onPresenceReceived: (jid: string, connectionStatus: string, status?: string) => void = () => { };
 	private _onMessageReceived: (from: string, message: string, type: string) => void = () => { };
+	private _onVcardReceived: (vCard: VCard) => void = () => { };
 
 
 	constructor(id: string, password: string) {
@@ -27,7 +33,44 @@ export class XMPPChatDatasource implements ChatDatasource {
 			password: password,
 		});
 		this._currentId = id;
+		// Send register iq of id registration
 	}
+
+	public register(username: string, password: string) {
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';	// Accept self-signed certificates
+
+	// console.log('register user');
+	const connection = new Strophe.Connection('xmpp://alumchat.xyz:5222');
+		connection.connect('alumchat.xyz', null, function (status: any) {
+		console.log(status)
+  if (status === Strophe.Status.CONNECTED) {
+    console.log('Connected to XMPP server');
+    
+    // Registration IQ stanza
+    const registrationIQ = $iq({
+      type: 'set',
+      to: 'alumchat.xyz'
+    }).c('query', { xmlns: 'jabber:iq:register' })
+      .c('username').t(username).up()
+      .c('password').t(password);
+    
+    connection.sendIQ(registrationIQ, function (response: any) {
+      if (response && response.getAttribute('type') === 'result') {
+        console.log('Registration successful');
+      } else {
+        console.log('Registration failed');
+      }
+      
+      // Disconnect after registration attempt
+      connection.disconnect();
+    });
+  } else {
+    console.log('Failed to connect to XMPP server');
+  }
+	});
+	}
+
+	
 
 	/**
 	 * Start the XMPP client
@@ -38,6 +81,14 @@ export class XMPPChatDatasource implements ChatDatasource {
 		debug(this.xmpp, debugMode);
 	}
 
+
+	/**
+	 * Get a Vcard
+	 * @param joid 
+	 */
+	async getVCard(joid: string): Promise<void> {
+		await this.xmpp.send(xml('iq', { type: 'get', to: joid + '@alumchat.xyz' }, xml('vCard', { xmlns: 'vcard-temp' })));
+	}
 
 
 	/**
@@ -165,6 +216,10 @@ export class XMPPChatDatasource implements ChatDatasource {
 				if (ask === 'unsubscribe') {
 					await this.xmpp.send(xml('iq', { type: 'result', id, to: jid }));
 				}
+			} else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('vCard')?.attrs.xmlns === 'vcard-temp') {
+
+				const vcard = VCardMapper.fromXmppResponse(stanza.getChild('vCard')!);
+				this._onVcardReceived(vcard);
 			}
 		});
 	}
@@ -217,6 +272,10 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 	set onMessageReceived(onMessageReceived: (from: string, message: string, type:string) => void) {
 		this._onMessageReceived = onMessageReceived;
+	}
+
+	set onVcardReceived(onVcardReceived: (vCard: VCard) => void) {
+		this._onVcardReceived = onVcardReceived;
 	}
 
 

@@ -22,4 +22,6 @@ export interface ChatDatasource {
 	removeAccount(): Promise<void>
 
 	joingGroup(groupJid: string, nick: string): Promise<void>
+
+	getVCard(joid: string): Promise<void>
 }

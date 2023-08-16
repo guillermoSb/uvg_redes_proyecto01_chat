@@ -4,6 +4,7 @@ import readline from 'readline';
 import { XMPPChatDatasource } from '../infrastructure/datasources/XMPPChatDatasource';
 import { Roster } from '../domain/entities/Roster';
 import { RemoveAccountUseCase, GetRosterUseCase, AddContactUseCase, RemoveContactUseCase, UpdateStatusUseCase, JoinGroupUseCase, SendMessageUseCase, SendMessageToGroupUseCase, LogoutUseCase } from '../useCases/useCases';
+import { VCard } from '../domain/entities/VCard';
 
 
 /**
@@ -46,6 +47,10 @@ export class CLIChat {
 			
 			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
+
+		this.xmppChatDatasource.onVcardReceived = (vcard: VCard) => {
+				console.log('\n' +vcard.toString());
+		}
 		
 		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
 			const fromJid = from.split('/')[0];
@@ -112,9 +117,16 @@ export class CLIChat {
 				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
 				this.currentUser = 'san191517test';
 				this.configureXmppListeners();
+
 				await this.xmppChatDatasource.start({ debugMode: false });
 			});
 		});
+	}
+
+	async register(username: string, password: string) {
+		this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
+
+		this.xmppChatDatasource?.register(username, password);
 	}
 
 	
@@ -203,12 +215,8 @@ export class CLIChat {
 				});
 				rl2.question('Enter the contact jid: ', async (contactJid) => {
 					rl2.close();
-					const user = this.roster.getUserFromRoster(contactJid + '@alumchat.xyz');
-					if (!user) {
-						this._displayError('User not found');
-						return this._chatPrompt();
-					}
-					console.log(user.toString());
+					await this.xmppChatDatasource?.getVCard(contactJid);
+					
 					return this._chatPrompt();
 				});
 				

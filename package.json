@@ -11,6 +11,7 @@
 	"license": "ISC",
 	"dependencies": {
 		"@types/prompt-sync": "^4.2.0",
+		"@types/strophe.js": "^1.4.2",
 		"@types/xmpp__client": "^0.13.0",
 		"@types/xmpp__debug": "^0.13.0",
 		"@xmpp/client": "^0.13.1",
@@ -19,6 +20,7 @@
 		"prompt-sync": "^4.2.0",
 		"readline": "^1.3.0",
 		"stanza": "^12.18.0",
+		"strophe.js": "^1.6.2",
 		"table": "^6.8.1",
 		"ts-node": "^10.9.1"
 	},
