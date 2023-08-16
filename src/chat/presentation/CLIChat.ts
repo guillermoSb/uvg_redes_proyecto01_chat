@@ -114,8 +114,9 @@ export class CLIChat {
 			console.log(`You entered: ${jid}`);
 			rl.question('Enter your password: ', async (password) => {
 				rl.close();
-				this.xmppChatDatasource = new XMPPChatDatasource(jid, password);	// ! For now, we are hardcoding the user and password
-				this.currentUser = jid;
+				
+				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
+				this.currentUser = 'san191517test';
 				this.configureXmppListeners();
 
 				await this.xmppChatDatasource.start({ debugMode: false });
@@ -148,7 +149,7 @@ export class CLIChat {
 		this._showMenu();
 		rl.question('Enter your command: ', async (answer) => {
 			const choice = parseInt(answer);
-			if (choice == 10) {
+			if (choice == 11) {
 				console.log(chalk.green('Logging out...'));
 				const logoutUseCase = new LogoutUseCase(this.xmppChatDatasource!);
 				await logoutUseCase.execute();
@@ -325,7 +326,27 @@ export class CLIChat {
 					};
 					return chat(contactJid);
 				});
-			} else if (choice == 100) {
+			} else if (choice == 10) {
+				// ask for jid
+				rl.close();
+				const rl2 = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout,
+				});
+				rl2.question('Enter the contact jid: ', async (contactJid) => {
+					rl2.close();
+					const rl3 = readline.createInterface({
+						input: process.stdin,
+						output: process.stdout,
+					});
+					rl3.question('Enter the file path: ', async (filePath) => {
+						rl3.close();
+						await this.xmppChatDatasource?.sendFile(contactJid);
+					});
+				}
+				);
+			}
+			else if (choice == 100) {
 				console.log(chalk.green('Removing account...'));
 				const removeAccountUseCase = new RemoveAccountUseCase(this.xmppChatDatasource!);
 				await removeAccountUseCase.execute();
@@ -350,7 +371,8 @@ export class CLIChat {
 		7. Chat
 		8. Join Group
 		9. Chat in group
-		10. Logout
+		10. Send file
+		11. Logout
 		100. Remove account
 	`);
 	}

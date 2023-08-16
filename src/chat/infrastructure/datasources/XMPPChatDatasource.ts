@@ -202,6 +202,9 @@ export class XMPPChatDatasource implements ChatDatasource {
 			}
 
 			// Iq
+			if (stanza.is('iq')) {
+				console.log(stanza.toString())
+			}
 			if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
 				const incomingRoster = RosterMapper.fromXmppResponse(stanza);
 				return this._onRosterReceived(incomingRoster);
@@ -219,6 +222,11 @@ export class XMPPChatDatasource implements ChatDatasource {
 				this._onVcardReceived(vcard);
 			}
 		});
+	}
+
+
+	async sendFile(to: string): Promise<void> {
+		await this.xmpp.send(xml('iq', { type: 'set', to: to + '@alumchat.xyz' }, xml('open', { xmlns: 'http://jabber.org/protocol/ibb', blocksize: '4096', sid: 'i781hf64', })));
 	}
 
 
