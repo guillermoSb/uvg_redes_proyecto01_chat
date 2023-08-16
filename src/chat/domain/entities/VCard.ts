@@ -9,6 +9,6 @@ export class VCard {
 		) { }
 	
 	public toString() {
-		return this.name + " (" + this.nick + ") " + this.jid;
+		return `VCARD\n${this.name} (${this.nick})`;
 	}
 }

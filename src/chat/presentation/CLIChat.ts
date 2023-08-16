@@ -215,8 +215,11 @@ export class CLIChat {
 				});
 				rl2.question('Enter the contact jid: ', async (contactJid) => {
 					rl2.close();
+					const user = this.roster.getUserFromRoster(contactJid + '@alumchat.xyz');
+					if (user) {
+						console.log(user.toString())
+					}
 					await this.xmppChatDatasource?.getVCard(contactJid);
-					
 					return this._chatPrompt();
 				});
 				
