@@ -12,20 +12,22 @@ const rl = readline.createInterface({
 	output: process.stdout
 });
 
+/**
+ * Entrypoint for the chat
+ */
 const main = async () => {
-	const cliChat = new CLIChat();
+	const cliChat = new CLIChat();	// Chat instance
 	rl.question('1 - Login\n2 - Register\n3 - Exit\n', async (answer) => {
 		rl.close();
 		let choice = parseInt(answer);
 		if (choice == 1) {
-			cliChat.login();
+			cliChat.login();	// Start the chat
 		} else if (choice == 2) {
-			cliChat.register();
-			
+			cliChat.register();	// Register user
 		} else if (choice == 3) {
 			process.exit(0);
 		}
 	});
 }
 
-main();
+main();	// Start the chat
