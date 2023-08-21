@@ -1,5 +1,9 @@
 import { ChatDatasource } from '../domain/datasources/ChatDatasource';
 
+
+/**
+ * Send message to a group
+ */
 export class SendMessageToGroupUseCase {
 	public chatDatasource: ChatDatasource;
 	constructor(chatDatasource: ChatDatasource) {

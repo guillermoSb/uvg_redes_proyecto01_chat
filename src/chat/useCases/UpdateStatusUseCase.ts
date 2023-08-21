@@ -1,5 +1,9 @@
 import { ChatDatasource } from '../domain/datasources/ChatDatasource';
 
+
+/**
+ * Update the user status
+ */
 export class UpdateStatusUseCase {
 	public chatDatasource: ChatDatasource;
 	constructor(chatDatasource: ChatDatasource) {

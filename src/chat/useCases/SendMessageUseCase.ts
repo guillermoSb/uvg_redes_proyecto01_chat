@@ -1,5 +1,9 @@
 import { ChatDatasource } from '../domain/datasources/ChatDatasource';
 
+
+/**
+ * Send message
+ */
 export class SendMessageUseCase {
 	public chatDatasource: ChatDatasource;
 	constructor(chatDatasource: ChatDatasource) {

@@ -1,6 +1,8 @@
 import { ChatDatasource } from '../domain/datasources/ChatDatasource';
 
-
+/**
+ * Remove a contact from the roster
+ */
 export class RemoveContactUseCase {
 	public chatDatasource: ChatDatasource;
 	constructor(chatDatasource: ChatDatasource) {
