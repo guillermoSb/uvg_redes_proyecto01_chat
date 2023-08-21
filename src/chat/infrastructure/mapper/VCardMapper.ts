@@ -1,7 +1,16 @@
 import { VCard } from "../../domain/entities/VCard";
 import  Element  from 'ltx/src/Element';
 
+/**
+ * Mapper to process VCards
+ */
 export class VCardMapper {
+
+	/**
+	 * Convert XMPP response to VCard
+	 * @param response 
+	 * @returns 
+	 */
 	public static fromXmppResponse(response: Element): VCard {
 		let name = '';
 		let nickname = '';

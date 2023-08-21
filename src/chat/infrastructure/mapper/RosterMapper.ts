@@ -3,12 +3,20 @@ import { Roster } from '../../domain/entities/Roster';
 import { User } from '../../domain/entities/User';
 // import { User } from '../../domain/User';
 
-
+// Interface to represent the user data that will be received
 interface XmppUser {
 	attrs: object;
 }
 
+/**
+ * Mapper to convert an XMPP response to a Roster object.
+ */
 export class RosterMapper { 
+	/**
+	 * Convert XMPP response to Roster
+	 * @param response 
+	 * @returns 
+	 */
 	public static fromXmppResponse(response: Element): Roster {
 		const users = response.getChild('query')?.children;
 		if (!users) return new Roster([]);
@@ -23,7 +31,6 @@ export class RosterMapper {
 				return new User(jid, name);
 			});
 		
-		return new Roster(userList);
-		
+		return new Roster(userList);	
 	}
 }

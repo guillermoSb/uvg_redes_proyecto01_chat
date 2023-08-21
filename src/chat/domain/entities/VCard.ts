@@ -8,6 +8,7 @@ export class VCard {
 				public jid: string
 		) { }
 	
+	// String representation
 	public toString() {
 		return `VCARD\n${this.name} (${this.nick})`;
 	}

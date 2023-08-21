@@ -97,9 +97,7 @@ export class Roster {
 				user.status ?? ''
 			]
 		});
-
-
-		
+		// Return the roster as a table
 		return `\n${table([data, ...users], {
 			header: {
 				content: chalk.green('Roster'),
