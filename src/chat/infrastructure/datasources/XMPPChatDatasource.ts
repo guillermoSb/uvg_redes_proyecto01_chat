@@ -242,7 +242,6 @@ export class XMPPChatDatasource implements ChatDatasource {
 	async sendFile(to: string, name: string): Promise<boolean> {
 		const filePath = path.join(__dirname, '../../../uploads', name);
 		let fileExt = path.extname(filePath);
-		// remove the dot
 		fileExt = fileExt.substring(1);
 		if (!fs.existsSync(filePath)) {
 			
@@ -250,7 +249,6 @@ export class XMPPChatDatasource implements ChatDatasource {
 		}
 		const file = fs.readFileSync(filePath)
 		const base64String = file.toString('base64');
-		console.log(`file-${fileExt}://${base64String}`)
 		this.sendMessage(to, `file-${fileExt}://${base64String}`);
 		return true;
 	}

@@ -11,6 +11,7 @@ Universidad del Valle de Guatemala - 2023 (Redes)
 - [x] Group Chat
 - [x] Custom status and presence updates
 - [x] Add / Remove contacts
+- [x] Send / Receive base64 files
 
 ## About the project
 The decission on typescript is based on the fact that it is a strongly typed language, which helps to avoid errors and makes the code more readable. It also has a lot of support and documentation. I decided to use [Clean Architecture](https://betterprogramming.pub/the-ultimate-clean-architecture-template-for-typescript-projects-e53936269bb9) as much as possible. The code is organized in: Domain, Infrastructure, Presentation and Use Cases.
