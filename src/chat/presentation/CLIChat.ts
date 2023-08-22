@@ -44,7 +44,8 @@ export class CLIChat {
 		};
 
 		this.xmppChatDatasource.onPresenceReceived = (jid: string, connectionStatus: string, status?: string) => {
-			
+			console.log(chalk.gray(`${jid} is now ${connectionStatus} ${status ? `(${status})` : ''}`))
+		
 			this.roster.setUserConnectionStatus(jid, connectionStatus, status);
 		};
 
