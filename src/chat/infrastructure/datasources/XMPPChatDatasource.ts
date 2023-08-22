@@ -7,6 +7,8 @@ import { RosterMapper } from '../mapper/RosterMapper';
 import { VCardMapper } from '../mapper/VCardMapper';
 import { VCard } from '../../domain/entities/VCard';
 import net from 'net';
+import fs from 'fs';
+import path from 'path';
 
 export class XMPPChatDatasource implements ChatDatasource {
 	public static readonly SERVER_URL = 'alumchat.xyz';
@@ -192,8 +194,20 @@ export class XMPPChatDatasource implements ChatDatasource {
 				if (stanza.getChild('composing')) {
 					this._onMessageReceived(from, '', 'composing');
 				} else if (stanza.getChild('body')) {
+
 					const body = stanza.getChild('body')?.getText();
-					this._onMessageReceived(from, body ?? '', stanza.attrs.type);
+					// check if the body starts with file://
+					if (body?.startsWith('file-')) {
+						const fileExt = body.split('://')[0].split('-')[1];
+						const base64String = body.split('://')[1];
+						const buffer = Buffer.from(base64String, 'base64');
+						const filePath = path.join(__dirname, '../../../downloads', `${Date.now()}.${fileExt}`);
+						fs.writeFileSync(filePath, buffer);
+						this._onMessageReceived(from,`File received: ${filePath}`, stanza.attrs.type);
+					} else {
+						this._onMessageReceived(from, body ?? '', stanza.attrs.type);
+
+					}
 				} else if (stanza.getChild('active')) {
 					this._onMessageReceived(from, '', 'active');
 				} else if (stanza.getChild('inactive')) {
@@ -203,7 +217,7 @@ export class XMPPChatDatasource implements ChatDatasource {
 
 			// Iq
 			if (stanza.is('iq')) {
-				console.log(stanza.toString())
+				// console.log(stanza.toString())
 			}
 			if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.getChild('query')?.attrs.xmlns === 'jabber:iq:roster') {
 				const incomingRoster = RosterMapper.fromXmppResponse(stanza);
@@ -225,8 +239,20 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 
-	async sendFile(to: string): Promise<void> {
-		await this.xmpp.send(xml('iq', { type: 'set', to: to + '@alumchat.xyz' }, xml('open', { xmlns: 'http://jabber.org/protocol/ibb', blocksize: '4096', sid: 'i781hf64', })));
+	async sendFile(to: string, name: string): Promise<boolean> {
+		const filePath = path.join(__dirname, '../../../uploads', name);
+		let fileExt = path.extname(filePath);
+		// remove the dot
+		fileExt = fileExt.substring(1);
+		if (!fs.existsSync(filePath)) {
+			
+			return false;
+		}
+		const file = fs.readFileSync(filePath)
+		const base64String = file.toString('base64');
+		console.log(`file-${fileExt}://${base64String}`)
+		this.sendMessage(to, `file-${fileExt}://${base64String}`);
+		return true;
 	}
 
 

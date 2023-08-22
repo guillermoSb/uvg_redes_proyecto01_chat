@@ -116,7 +116,7 @@ export class CLIChat {
 			rl.question('Enter your password: ', async (password) => {
 				rl.close();
 				
-				this.xmppChatDatasource = new XMPPChatDatasource('san191517test', '123456');	// ! For now, we are hardcoding the user and password
+				this.xmppChatDatasource = new XMPPChatDatasource(jid, password);	// ! For now, we are hardcoding the user and password
 				this.currentUser = 'san191517test';
 				this.configureXmppListeners();
 
@@ -340,9 +340,15 @@ export class CLIChat {
 						input: process.stdin,
 						output: process.stdout,
 					});
-					rl3.question('Enter the file path: ', async (filePath) => {
+					rl3.question('Enter the file name: ', async (fileName) => {
 						rl3.close();
-						await this.xmppChatDatasource?.sendFile(contactJid);
+						const success = await this.xmppChatDatasource?.sendFile(contactJid, fileName);
+						if (!success) {
+							this._displayError('File not found');
+						} else {
+							console.log(chalk.green('File sent.'));
+						}
+						return this._chatPrompt();
 					});
 				}
 				);
