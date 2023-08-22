@@ -239,6 +239,12 @@ export class XMPPChatDatasource implements ChatDatasource {
 	}
 
 
+	/**
+	 * Send a file
+	 * @param to 
+	 * @param name 
+	 * @returns 
+	 */
 	async sendFile(to: string, name: string): Promise<boolean> {
 		const filePath = path.join(__dirname, '../../../uploads', name);
 		let fileExt = path.extname(filePath);
