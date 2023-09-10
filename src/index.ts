@@ -1,6 +1,7 @@
-import { RouterSimulation } from './RouterSimulation';
+import { RouterSimulation } from './routerNetwork/RouterSimulation';
 import { CLIChat } from './chat/presentation/CLIChat';
 import net from 'net';
+import chalk from 'chalk';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';	// Accept self-signed certificates
 
 
@@ -36,12 +37,25 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';	// Accept self-signed certificat
 
 // ! Lab 3.2
 
-const jid = 'san191517';
-const password = '123456';
+// load jid and password from process.argv
 
-const routerSimulation = new RouterSimulation(jid, password);
+const jid = process.argv[2];
+const password = process.argv[3];
+const algorithm = process.argv[4];
+
+if (algorithm != 'link-state' && algorithm != 'distance-vector') {
+	console.log(chalk.red('Invalid algorithm, please use link-state or distance-vector'));
+	process.exit(0);
+}
+
+
+
+const routerSimulation = new RouterSimulation(jid, password, algorithm);
 
 (async () => {
-	await routerSimulation.start(true);	// Remove the true to disable debug mode
-	
+	await routerSimulation.start();	// Remove the true to disable debug mode
 })();
+
+
+// Run program with npm start san191517 123456 link-state
+// Change user, password and algorithm
