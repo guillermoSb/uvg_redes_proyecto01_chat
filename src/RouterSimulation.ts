@@ -2,18 +2,25 @@ import chalk from 'chalk';
 
 import { XMPPChatDatasource } from "./chat/infrastructure/datasources/XMPPChatDatasource";
 
-class RouterSimulation {
+export class RouterSimulation {
+	jid: string;
+	password: string;
 	xmppChatDatasource?: XMPPChatDatasource;
+	
+	constructor(jid: string, password: string) {
+		this.jid = jid;
+		this.password = password;
+	}
 
 	/**
 	 * Start the router simulation
 	 * @param jid 
 	 * @param password 
 	 */
-	async start(jid: string, password: string) {
-		this.xmppChatDatasource = new XMPPChatDatasource(jid, password);	// ! For now, we are hardcoding the user and password
+	async start(debugMode: boolean = false) {
+		this.xmppChatDatasource = new XMPPChatDatasource(this.jid, this.password);	// ! For now, we are hardcoding the user and password
 		this.configureXmppListeners();
-		await this.xmppChatDatasource.start({ debugMode: false });
+		await this.xmppChatDatasource.start({ debugMode });
 	}
 
 
