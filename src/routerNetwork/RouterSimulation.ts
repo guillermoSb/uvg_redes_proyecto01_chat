@@ -88,17 +88,38 @@ export class RouterSimulation {
 
 		
 		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
-			if (type === 'chat') {					
-				console.log(chalk.blueBright(`Message from ${from}: ${message}`));
-			} else if (type === 'groupchat') {				
-				console.log(chalk.blueBright(`Group Message from ${from}: ${message}`));
+			
+			try {
+				let messagePayload = JSON.parse(message);
+				if (messagePayload.type && messagePayload.type == 'echo') {
+					const echoPayload: EchoDTO = messagePayload;
+					if (echoPayload.headers.to == this.routerName) {
+						// Process echo message if it is for this router
+						const timestamp = Date.now();
+						echoPayload.payload.timestamp2 = timestamp.toString();
+						this.sendEcho(from.split('@')[0], echoPayload);
+						this.calculateCosts(echoPayload.headers.from, parseInt(echoPayload.payload.timestamp1), parseInt(echoPayload.payload.timestamp2));
+					} else if (echoPayload.headers.from == this.routerName) {
+						// Process echo message if it is from this router
+						this.calculateCosts(echoPayload.headers.to, parseInt(echoPayload.payload.timestamp1), parseInt(echoPayload.payload.timestamp2));
+					}
+				}
+			} catch (error) {
+				console.log(chalk.red('Invalid message received', message, from));
+				console.log(error);
 			}
 		};
 	}
+	
 
 
+	private calculateCosts(neighbor: string, timestamp1: number, timestamp2: number) {
+		const cost = timestamp2 - timestamp1;
+		console.log(chalk.yellow(`Cost to ${neighbor} is ${cost}`));
+	}
 
 	// ------------------- LINK STATE ROUTING ------------------- //
+	
 	private _discoverNeighborCosts() {
 		const neighbors = this.topography.get(this.routerName);
 		if (neighbors) {
@@ -110,19 +131,22 @@ export class RouterSimulation {
 						type: 'echo',
 						headers: {
 							from: this.routerName,
-							to: jid + '@alumchat.xyz'
+							to: neighbor
 						},
 						payload: {
 							timestamp1: timestamp.toString(),
 							timestamp2: ''
 						}
 					}
-					const echoMessage = JSON.stringify(echo);
-					console.log(chalk.yellow(`Sending echo to ${jid}`, echoMessage));
-					this.xmppChatDatasource?.sendMessage(jid, echoMessage);
+					this.sendEcho(jid, echo);
 				}
 			}
 		}
+	}
+
+	private sendEcho(to: string, echoMessage: EchoDTO) {
+		console.log(chalk.yellow(`Sending echo to ${to}`, JSON.stringify(echoMessage)));
+		this.xmppChatDatasource?.sendMessage(to, JSON.stringify(echoMessage));
 	}
 
 

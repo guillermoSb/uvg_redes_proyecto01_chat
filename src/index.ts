@@ -53,7 +53,7 @@ if (algorithm != 'link-state' && algorithm != 'distance-vector') {
 const routerSimulation = new RouterSimulation(jid, password, algorithm);
 
 (async () => {
-	await routerSimulation.start();	// Remove the true to disable debug mode
+	await routerSimulation.start(false);	// Remove the true to disable debug mode
 })();
 
 
