@@ -5,7 +5,7 @@ import chalk from 'chalk';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';	// Accept self-signed certificates
 
 
-// import readline from 'readline';
+import readline from 'readline';
 
 // // Option 1 - login, 2 - register 3 - exit
 
@@ -47,14 +47,39 @@ if (algorithm != 'link-state' && algorithm != 'distance-vector') {
 	console.log(chalk.red('Invalid algorithm, please use link-state or distance-vector'));
 	process.exit(0);
 }
-
-
-
 const routerSimulation = new RouterSimulation(jid, password, algorithm);
+
+const askForMessage = async () => {
+	const rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+	});
+	rl.question('Send message to: ', async (answer) => {
+		rl.close();
+		let destination = answer;
+		const rl2 = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+		rl2.question('Message: ', async (answer) => {
+			rl2.close();
+			let message = answer;
+			await routerSimulation.sendMessage(destination, message);
+			askForMessage();
+		});
+	});
+}
+
+
 
 (async () => {
 	await routerSimulation.start(false);	// Remove the true to disable debug mode
+	askForMessage();
+	// Start a prompt
+	
 })();
+
+
 
 
 // Run program with npm start san191517 123456 link-state
