@@ -1,0 +1,46 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Typescript",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/src/index.ts",    
+            "args": [
+                "${input:enterJid}",
+                "${input:enterPassword}",
+                "${input:enterAlgorithm}"
+            ],
+            "runtimeArgs": [
+                "-r",
+                "ts-node/register",
+                "-r",
+                "tsconfig-paths/register"
+            ],
+            "console": "integratedTerminal",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "enterJid",
+            "type": "promptString",
+            "description": "Enter JID"
+        },
+        {
+            "id": "enterPassword",
+            "type": "promptString",
+            "description": "Enter Password"
+        },
+        {
+            "id": "enterAlgorithm",
+            "type": "promptString",
+            "description": "Enter Algorithm"
+        }
+    ]
+}
