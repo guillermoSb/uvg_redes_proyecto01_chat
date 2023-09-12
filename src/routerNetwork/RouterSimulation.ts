@@ -10,7 +10,6 @@ import { InfoDTO } from './infrastructure/dtos/infoDTO';
 import { Link } from 'stanza/protocol';
 
 const LINK_STATE = 'link-state';
-const DISTANCE_VECTOR = 'distance-vector';
 
 export class RouterSimulation {
 	jid: string;
@@ -81,8 +80,6 @@ export class RouterSimulation {
 				this._createLinkStateNode();
 				this._discoverNeighborCosts();
 				
-			} else if (this.algorithm == DISTANCE_VECTOR) {
-				// TODO: SARA
 			}
 		};
 
@@ -296,7 +293,6 @@ export class RouterSimulation {
 	}
 
 
-	// ------------------- DISTANCE VECTOR ROUTING ------------------- //
 
 
 	
