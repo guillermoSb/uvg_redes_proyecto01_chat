@@ -19,6 +19,7 @@ export class RouterSimulation {
 	
 	routerNames: Map<string, string> = new Map();
 	topography: Map<string, string[]> = new Map();
+	sentPackets: Set<string> = new Set();
 	algorithm: string;
 
 	linkStateNode?: LinkStateRoutingNode;
@@ -110,6 +111,8 @@ export class RouterSimulation {
 						this._sendLinkStatePacket();
 					} else if (echoPayload.headers.from == this.routerName) {
 						// Process echo message if it is from this router
+						const timestamp = Date.now();
+						echoPayload.payload.timestamp2 = timestamp.toString();
 						this._calculateCosts(echoPayload.headers.to, parseInt(echoPayload.payload.timestamp1), parseInt(echoPayload.payload.timestamp2));
 						this._sendLinkStatePacket();
 					}
@@ -203,9 +206,7 @@ export class RouterSimulation {
 	
 	private _sendLinkStatePacket() {
 		const packet = this.linkStateNode?.createPacket();
-		const costsObject: any = {
-
-		};
+		const costsObject: any = {};
 		packet?.costs.forEach((cost, neighbor) => {
 			costsObject[neighbor] = cost;
 		});
@@ -214,18 +215,22 @@ export class RouterSimulation {
 
 		if (neighbors) {
 			for (let neighbor of neighbors) {
-				const info: InfoDTO = {
-					type: 'info',
-					headers: {
-						from: this.routerName,
-						to: neighbor
-					},
-					payload: costsObject
+				if (!this.sentPackets.has(neighbor)) {
+					const info: InfoDTO = {
+						type: 'info',
+						headers: {
+							from: this.routerName,
+							to: neighbor
+						},
+						payload: costsObject
+					};
+					this._sendLinkStatePacketToAll(info);
+					this.sentPackets.add(neighbor);
 				}
-				this._sendLinkStatePacketToAll(info);
 			}
 		}
 	}
+	
 
 
 	/**
@@ -236,10 +241,12 @@ export class RouterSimulation {
 		const neighbors = this.topography.keys();
 		if (neighbors) {
 			for (let neighbor of neighbors) {
-				const jid = this.routerNames.get(neighbor);
-				if (jid && neighbor != this.routerName) {
-					console.log(chalk.yellow(`Sending link state packet to ${jid}`, JSON.stringify(packet)));
-					this.xmppChatDatasource?.sendMessage(jid, JSON.stringify(packet));
+				if (!this.sentPackets.has(neighbor)) {
+					const jid = this.routerNames.get(neighbor);
+					if (jid && neighbor != this.routerName) {
+						console.log(chalk.yellow(`Sending link state packet to ${jid}`, JSON.stringify(packet)));
+						this.xmppChatDatasource?.sendMessage(jid, JSON.stringify(packet));
+					}
 				}
 			}
 		}
