@@ -56,6 +56,11 @@ const askForMessage = async () => {
 	});
 	rl.question('Send message to: ', async (answer) => {
 		rl.close();
+		if (answer == '/discover' && algorithm == 'link-state') {
+			await routerSimulation.discoverNeighborCosts();
+			askForMessage();
+			return;		
+		}
 		let destination = answer;
 		const rl2 = readline.createInterface({
 			input: process.stdin,

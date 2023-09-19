@@ -41,6 +41,13 @@ export class RouterSimulation {
 		return '';
 	}
 
+	/**
+	 * The total of nodes
+	 */
+	get totalNodes(): number {
+		return this.routerNames.size;
+	}
+
 
 	/**
 	 * Loads all config files
@@ -81,7 +88,7 @@ export class RouterSimulation {
 			if (this.algorithm == LINK_STATE) {
 				// Discover neighbor costs
 				this._createLinkStateNode();
-				this._discoverNeighborCosts();
+				this.discoverNeighborCosts();
 			}
 		};
 
@@ -116,6 +123,7 @@ export class RouterSimulation {
 						}
 					}
 				} else if (messagePayload.type && messagePayload.type == 'info') {
+					console.log('info received', messagePayload)
 					const infoPayload: InfoDTO = messagePayload;
 					if (infoPayload.headers.to == this.routerName) {
 						// Process info message if it is for this router
@@ -175,7 +183,6 @@ export class RouterSimulation {
 	 * @param destination 
 	 */
 	async forwardPacket(packet: string, destination: string) {
-		console.log(chalk.gray(`Forwarding packet to ${destination} - ${packet}`))
 		const jid = this.routerNames.get(destination);
 		if (jid) {
 			this.xmppChatDatasource?.sendMessage(jid, packet);
@@ -206,12 +213,14 @@ export class RouterSimulation {
 		if (this.algorithm == LINK_STATE) {
 			const linkStatePath = linkStateRouting(this.linkStateNode!);
 			const path = linkStatePath.find(path => path.destination == destination);
+			console.log('Comuted path: ', path)
 			const nextNode = path?.stepts[1];
+			console.log('next node on the algorithm is: ', nextNode)
 			if (nextNode) {
 				await this.forwardPacket(JSON.stringify(messagePayload), nextNode);
 			}
 		} else if (this.algorithm == FLOODING) {
-			messagePayload.headers.hop_count = 100;
+			messagePayload.headers.hop_count = this.totalNodes;
 			this._sendFloodPacket(messagePayload);
 		}
 	}
@@ -253,17 +262,15 @@ export class RouterSimulation {
 		packet?.costs.forEach((cost, neighbor) => {
 			costsObject[neighbor] = cost;
 		});
-
-		const neighbors = this.topography.get(this.routerName);
-
-		if (neighbors) {
-			for (let neighbor of neighbors) {
+		const nodes = this.topography.keys();
+		if (nodes) {
+			for (let neighbor of nodes) {
 				const info: InfoDTO = {
 					type: 'info',
 					headers: {
 						from: this.routerName,
 						to: neighbor,
-						hop_count: 100
+						hop_count: this.totalNodes
 					},
 					payload: costsObject
 				}
@@ -278,6 +285,7 @@ export class RouterSimulation {
 	 * @param packet 
 	 */
 	private _sendLinkStatePacketToAll(packet: InfoDTO) {
+		console.log('Sending link state packet: ', packet)
 		this._sendFloodPacket(packet);
 	}
 
@@ -300,7 +308,8 @@ export class RouterSimulation {
 	/**
 	 * Discover neighbor costs
 	 */
-	private _discoverNeighborCosts() {
+	async discoverNeighborCosts() {
+		console.log('Discovering neighbors...')
 		const neighbors = this.topography.get(this.routerName);
 		if (neighbors) {
 			for (let neighbor of neighbors) {
@@ -318,7 +327,7 @@ export class RouterSimulation {
 							timestamp2: ''
 						}
 					}
-					this.sendEcho(jid, echo);
+					await this.sendEcho(jid, echo);
 				}
 			}
 		}
@@ -329,9 +338,8 @@ export class RouterSimulation {
 	 * @param to jid of the destination only the name without the @alumchat.xyz
 	 * @param echoMessage 
 	 */
-	private sendEcho(to: string, echoMessage: EchoDTO) {
-		console.log(chalk.yellow(`Sending echo to ${to}`, JSON.stringify(echoMessage)));
-		this.xmppChatDatasource?.sendMessage(to, JSON.stringify(echoMessage));
+	private async sendEcho(to: string, echoMessage: EchoDTO) {
+		await this.xmppChatDatasource?.sendMessage(to, JSON.stringify(echoMessage));
 	}
 
 
