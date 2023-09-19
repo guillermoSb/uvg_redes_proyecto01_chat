@@ -10,6 +10,8 @@ import { InfoDTO } from './infrastructure/dtos/infoDTO';
 import { Link } from 'stanza/protocol';
 
 const LINK_STATE = 'link-state';
+const FLOODING = 'flooding'
+const DISTANCE_VECTOR = 'distance-vector';
 
 export class RouterSimulation {
 	jid: string;
@@ -79,12 +81,11 @@ export class RouterSimulation {
 				// Discover neighbor costs
 				this._createLinkStateNode();
 				this._discoverNeighborCosts();
-				
 			}
 		};
 
 		this.xmppChatDatasource.onLoginError = () => {
-			console.log(chalk.red('Could not initialize the router. Verify alumchat credentials.'));			
+			console.log(chalk.red('Could not initialize the router. Verify alumchat credentials.'));
 		};
 
 		this.xmppChatDatasource.onPresenceReceived = (jid: string, connectionStatus: string, status?: string) => {
@@ -111,30 +112,21 @@ export class RouterSimulation {
 						this._sendLinkStatePacket();
 					}
 				} else if (messagePayload.type && messagePayload.type == 'info') {
-					// process info message
-					const infoPayload: InfoDTO = messagePayload;
-					if (infoPayload.headers.to == this.routerName) {
-						// Process info message if it is for this router
-						const linkStatePacket: LinkStateRoutingPacket = {
-							identity: infoPayload.headers.from,
-							costs: new Map(Object.entries(infoPayload.payload))
-						};
-						this.linkStateNode?.processPacket(linkStatePacket);
-						console.log(chalk.green('Link state packet received'));
-					} else {
-						// Forward the message to all neighbors
-						this._sendLinkStatePacketToAll(infoPayload);
-						// console.log(chalk.yellow(`Forwarding info to all neighbors`, JSON.stringify(infoPayload)));
-					}
-
+				
 				} else if (messagePayload.type && messagePayload.type == 'message') {
 					const messagePayload: MessageDTO = JSON.parse(message);
-					if (messagePayload.headers.to == this.routerName) {
-						// Process message if it is for this router
-						console.log(chalk.green('Message received', messagePayload.payload, from));
-					} else {
-						// Process message if it is not for this router
-						this.sendMessage(messagePayload.headers.to, messagePayload.payload, messagePayload.headers.hop_count + 1);
+					if (this.algorithm == FLOODING) {
+						messagePayload.headers.hop_count--;
+						// Print the message if it is for this router
+						if (messagePayload.headers.to == this.routerName) {
+							console.log(chalk.green(`Message received from ${messagePayload.headers.from}: ${messagePayload.payload}`));
+							// Set the hop count to 0 to avoid infinite loops
+							messagePayload.headers.hop_count = 0;
+						}
+						// Forward the message to all neighbors
+						if (messagePayload.headers.hop_count > 0) {
+							this._sendFloodPacket(messagePayload);
+						}
 					}
 				}
 			} catch (error) {
@@ -144,7 +136,13 @@ export class RouterSimulation {
 		};
 	}
 
+	/**
+	 * Forward a packet to a destination
+	 * @param packet 
+	 * @param destination 
+	 */
 	async forwardPacket(packet: string, destination: string) {
+		console.log(chalk.gray(`Forwarding packet to ${destination} - ${packet}`))
 		const jid = this.routerNames.get(destination);
 		if (jid) {
 			this.xmppChatDatasource?.sendMessage(jid, packet);
@@ -174,13 +172,28 @@ export class RouterSimulation {
 		// Calculate the path to send the message
 		if (this.algorithm == LINK_STATE) {
 			const linkStatePath = linkStateRouting(this.linkStateNode!);
-			console.log(chalk.green('Link state path: '));
 			const path = linkStatePath.find(path => path.destination == destination);
 			const nextNode = path?.stepts[1];
 			if (nextNode) {
-				console.log(chalk.green(`Next node: ${nextNode}`));
 				await this.forwardPacket(JSON.stringify(messagePayload), nextNode);
 			}
+		} else if (this.algorithm == FLOODING) {
+			messagePayload.headers.hop_count = 100;
+			this._sendFloodPacket(messagePayload);
+		}
+	}
+
+
+	// ------------------- FLOODING ------------------- //
+
+	/**
+	 * Send flooding packet
+	 * @param packet 
+	 */
+	private async _sendFloodPacket(packet: MessageDTO) {
+		const neighbors = this.topography.get(this.routerName) ?? [];
+		for (const neighbor of neighbors) {
+			await this.forwardPacket(JSON.stringify(packet), neighbor);
 		}
 	}
 

@@ -43,8 +43,8 @@ const jid = process.argv[2];
 const password = process.argv[3];
 const algorithm = process.argv[4];
 
-if (algorithm != 'link-state' && algorithm != 'distance-vector') {
-	console.log(chalk.red('Invalid algorithm, please use link-state or distance-vector'));
+if (algorithm != 'link-state' && algorithm != 'distance-vector' && algorithm != 'flooding') {
+	console.log(chalk.red('Invalid algorithm, please use link-state, distance-vector or flooding'));
 	process.exit(0);
 }
 const routerSimulation = new RouterSimulation(jid, password, algorithm);
