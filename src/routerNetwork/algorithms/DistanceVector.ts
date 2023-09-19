@@ -11,7 +11,7 @@ class DistanceVectorRoutingPacket {
 
 class DistanceVectorRoutingNode {
     name: string;
-    distanceTable: Map<string, number>;
+    distanceTable: Map<string, {cost: number, nextHop: string}>;
     neighbors: Map<string, number>;
 
     constructor(name: string) {
@@ -20,27 +20,43 @@ class DistanceVectorRoutingNode {
         this.neighbors = new Map();
 
         // Adding self to distance table
-        this.distanceTable.set(name, 0);
+        this.distanceTable.set(name, {cost: 0, nextHop: name});
     }
     
     addNeighbor(node: string, cost: number) {
         this.neighbors.set(node, cost);
-        if (!this.distanceTable.has(node)) { this.distanceTable.set(node, cost) }
-    }
-
-    createPacket(): DistanceVectorRoutingPacket {
-        return new DistanceVectorRoutingPacket(this.name, this.distanceTable);
+        if (!this.distanceTable.has(node)) {
+            this.distanceTable.set(node, {cost: cost, nextHop: node});
+        }
     }
     
+
+    createPacket(): DistanceVectorRoutingPacket {
+        const tableCost = new Map<string, number>();
+        for (const [destination, entry] of this.distanceTable.entries()) {
+            tableCost.set(destination, entry.cost);
+        }
+        return new DistanceVectorRoutingPacket(this.name, tableCost);
+    }
+    
+
     processPacket(packet: DistanceVectorRoutingPacket) {
         for (const [destination, cost] of packet.distanceTable.entries()) {
             const calcCost = (this.neighbors.get(packet.identity) || Infinity) + cost;
             if (destination === this.name) continue;
-            if (calcCost < (this.distanceTable.get(destination) || Infinity)) {
-                this.distanceTable.set(destination, calcCost);
+
+            const destinationValueDT = this.distanceTable.get(destination);
+            if (!destinationValueDT || calcCost < destinationValueDT.cost) {
+                this.distanceTable.set(destination, {cost: calcCost, nextHop: packet.identity});
             }
         }
     }
+
+    getNextHop(destination: string): string | null {
+        const destinationValDT = this.distanceTable.get(destination);
+        return destinationValDT ? destinationValDT.nextHop : null;
+    }
+
 }
 
 const equalTables = <K, V>(beforeTable: Map<K, V>, afterTable: Map<K, V>): boolean => {
@@ -67,6 +83,20 @@ export const distanceVectorRouting = (nodes: DistanceVectorRoutingNode[]): void 
         }
     } while (change);
 }
+
+
+export const distanceVectorRouting1 = (nodes: DistanceVectorRoutingNode[]): void => {
+    const packets: DistanceVectorRoutingPacket[] = nodes.map(node => node.createPacket());
+
+    for (const node of nodes) {
+        for (const packet of packets) {
+            if (packet.identity !== node.name) {
+                node.processPacket(packet);
+            }
+        }
+    }
+}
+
 
 
 export { DistanceVectorRoutingPacket, DistanceVectorRoutingNode };
@@ -99,8 +129,11 @@ const nodes = [A, B, C, D, E];
 
 distanceVectorRouting(nodes);
 
-console.log("Distance table [A]:", [...A.distanceTable]);
-console.log("Distance table [B]:", [...B.distanceTable]);
-console.log("Distance table [C]:", [...C.distanceTable]);
-console.log("Distance table [D]:", [...D.distanceTable]);
-console.log("Distance table [E]:", [...E.distanceTable]);
+// console.log("Distance table [A]:", [...A.distanceTable]);
+// console.log("Distance table [B]:", [...B.distanceTable]);
+// console.log("Distance table [C]:", [...C.distanceTable]);
+// console.log("Distance table [D]:", [...D.distanceTable]);
+// console.log("Distance table [E]:", [...E.distanceTable]);
+
+const nextHopEC = E.getNextHop("C");
+console.log(`Next hop from E to C: ${nextHopEC}`);
