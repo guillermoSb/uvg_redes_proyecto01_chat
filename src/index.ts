@@ -48,7 +48,7 @@ if (algorithm != 'link-state' && algorithm != 'distance-vector' && algorithm != 
 	process.exit(0);
 }
 const routerSimulation = new RouterSimulation(jid, password, algorithm);
-
+console.log(chalk.green('Starting router simulation...'));
 const askForMessage = async () => {
 	const rl = readline.createInterface({
 			input: process.stdin,

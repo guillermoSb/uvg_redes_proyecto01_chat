@@ -72,7 +72,7 @@ export class Djikstra {
                 break;
             }
         }
-        this.showPath();
+        // this.showPath();
     }
     
     getPath(): string[] {
@@ -96,7 +96,6 @@ export class Djikstra {
         }
         // Displaying the path and the distance
 		const path: string[] = this.getPath();
-        console.log(`Dijkstra:\nCamino hacia el nodo ${this.targetNode.name}: ${path.reverse().join(" -> ")}\nDistancia: ${nodeDistance}`);
     }
     
 }

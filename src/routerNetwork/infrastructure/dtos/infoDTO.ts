@@ -8,6 +8,8 @@ export interface InfoDTO {
 
 export interface Headers {
 	from:      string;
-	to:        string;
+	to: string;
+	hop_count: number;
+
 }
 
