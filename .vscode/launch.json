@@ -8,7 +8,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/src/index.ts",    
+            "program": "${workspaceFolder}/src/routerNetwork/algorithms/DistanceVector.ts",
             "args": [
                 "${input:enterJid}",
                 "${input:enterPassword}",

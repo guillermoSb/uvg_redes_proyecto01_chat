@@ -52,6 +52,7 @@ class DistanceVectorRoutingNode {
         }
     }
 
+    
     getNextHop(destination: string): string | null {
         const destinationValDT = this.distanceTable.get(destination);
         return destinationValDT ? destinationValDT.nextHop : null;
@@ -135,5 +136,5 @@ distanceVectorRouting(nodes);
 // console.log("Distance table [D]:", [...D.distanceTable]);
 // console.log("Distance table [E]:", [...E.distanceTable]);
 
-const nextHopEC = E.getNextHop("C");
-console.log(`Next hop from E to C: ${nextHopEC}`);
+const nextHop = C.getNextHop("E");
+console.log(`Next hop from C to A: ${nextHop}`);
