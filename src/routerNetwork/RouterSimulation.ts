@@ -45,6 +45,7 @@ export class RouterSimulation {
 	 * The total of nodes
 	 */
 	get totalNodes(): number {
+
 		return this.routerNames.size;
 	}
 
@@ -59,6 +60,7 @@ export class RouterSimulation {
 		// loading topography
 		const topoConfig: ConfigDTO = JSON.parse(fs.readFileSync(path.join(__dirname, './topo.json'), 'utf-8'));
 		this.handleConfiguration(topoConfig);
+		console.log(this.routerNames.size)
 		console.log(chalk.blueBright(`My router name is ${this.routerName}`))
 	}
 	
@@ -101,9 +103,11 @@ export class RouterSimulation {
 		};
 
 		
-		this.xmppChatDatasource.onMessageReceived = (from: string, message: string, type: string) => {
+		this.xmppChatDatasource.onMessageReceived = async (from: string, message: string, type: string) => {
 			
 			try {
+				// Replace single quotes with double quotes 
+				message = message.replace(/'/g, '"');
 				let messagePayload = JSON.parse(message);
 				if (messagePayload.type && messagePayload.type == 'echo') {
 					const echoPayload: EchoDTO = messagePayload;
@@ -111,19 +115,25 @@ export class RouterSimulation {
 					if (this.algorithm == LINK_STATE) {
 						if (echoPayload.headers.to == this.routerName) {
 							// Process echo message if it is for this router
+
+							// optional delay
+							if (this.routerName == 'D') {
+								await this.delay(2000);
+							}
 							const timestamp = Date.now();
 							echoPayload.payload.timestamp2 = timestamp.toString();
 							this.sendEcho(from.split('@')[0], echoPayload);
 							this._calculateCosts(echoPayload.headers.from, parseInt(echoPayload.payload.timestamp1), parseInt(echoPayload.payload.timestamp2));
 							this._sendLinkStatePacket();
+							
 						} else if (echoPayload.headers.from == this.routerName) {
 							// Process echo message if it is from this router
 							this._calculateCosts(echoPayload.headers.to, parseInt(echoPayload.payload.timestamp1), parseInt(echoPayload.payload.timestamp2));
+							
 							this._sendLinkStatePacket();
 						}
 					}
 				} else if (messagePayload.type && messagePayload.type == 'info') {
-					console.log('info received', messagePayload)
 					const infoPayload: InfoDTO = messagePayload;
 					if (infoPayload.headers.to == this.routerName) {
 						// Process info message if it is for this router
@@ -131,7 +141,9 @@ export class RouterSimulation {
 							identity: infoPayload.headers.from,
 							costs: new Map(Object.entries(infoPayload.payload))
 						};
+						console.log('Updating my cost table.');
 						this.linkStateNode?.processPacket(linkStatePacket);
+						console.log(this.linkStateNode?.distranceTables);
 						infoPayload.headers.hop_count = 0;
 					}
 					infoPayload.headers.hop_count--;
@@ -149,10 +161,12 @@ export class RouterSimulation {
 							console.log(chalk.green(`Message received from ${messagePayload.headers.from}: ${messagePayload.payload}`));
 							// Set the hop count to 0 to avoid infinite loops
 							messagePayload.headers.hop_count = 0;
-						}
-						// Forward the message to all neighbors
-						if (messagePayload.headers.hop_count > 0) {
-							this._sendFloodPacket(messagePayload);
+						} else {
+							// Forward the message to all neighbors
+							if (messagePayload.headers.hop_count > 0) {
+								this._sendFloodPacket(messagePayload);
+							}
+
 						}
 					} else if (this.algorithm == LINK_STATE) {
 						if (messagePayload.headers.to == this.routerName) {
@@ -183,10 +197,13 @@ export class RouterSimulation {
 	 * @param destination 
 	 */
 	async forwardPacket(packet: string, destination: string) {
-		const jid = this.routerNames.get(destination);
-		if (jid) {
-			this.xmppChatDatasource?.sendMessage(jid, packet);
+		if (destination != this.routerName) {			
+			const jid = this.routerNames.get(destination);
+			if (jid) {
+				this.xmppChatDatasource?.sendMessage(jid, packet);
+			}
 		}
+		
 	}
 	
 	/**
@@ -213,7 +230,6 @@ export class RouterSimulation {
 		if (this.algorithm == LINK_STATE) {
 			const linkStatePath = linkStateRouting(this.linkStateNode!);
 			const path = linkStatePath.find(path => path.destination == destination);
-			console.log('Comuted path: ', path)
 			const nextNode = path?.stepts[1];
 			console.log('next node on the algorithm is: ', nextNode)
 			if (nextNode) {
@@ -285,7 +301,7 @@ export class RouterSimulation {
 	 * @param packet 
 	 */
 	private _sendLinkStatePacketToAll(packet: InfoDTO) {
-		console.log('Sending link state packet: ', packet)
+		// console.log('Sending link state packet: ', packet)
 		this._sendFloodPacket(packet);
 	}
 
@@ -339,9 +355,18 @@ export class RouterSimulation {
 	 * @param echoMessage 
 	 */
 	private async sendEcho(to: string, echoMessage: EchoDTO) {
+		console.log(JSON.stringify(echoMessage))
 		await this.xmppChatDatasource?.sendMessage(to, JSON.stringify(echoMessage));
 	}
 
+	async delay(milliseconds: number) {
+		const timer = await new Promise((resolve) => {
+			setTimeout(() => {
+				resolve("done!");
+			}, milliseconds);
+		});
+		return timer;
+		}
 
 
 

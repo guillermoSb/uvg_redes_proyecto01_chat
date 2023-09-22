@@ -19,7 +19,7 @@
 import numpy as np
 import string, random, traceback, argparse
 
-_EXAMPLE = ["foo", "bar", "yeet", "lol", "woot", "omg", "swag"]
+_EXAMPLE = ["san191517", "mon20309", "pag20634", "mol20211", "arr20188", "elv20725"]
 # _SECC10 = ["cas18546@uvg.edu.gt","cou18817@uvg.edu.gt","cre19541@uvg.edu.gt",
 # "cue18220@uvg.edu.gt","dele19270@uvg.edu.gt","dele19298@uvg.edu.gt",
 # "dele19817@uvg.edu.gt","gar18071@uvg.edu.gt","gar19344@uvg.edu.gt",

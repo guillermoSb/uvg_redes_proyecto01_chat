@@ -19,7 +19,9 @@ export class Djikstra {
         this.weights = new Map();
         this.visited = new Set();
         this.unexplored = new Set();
-    }
+		}
+	
+	
 
     apply(): void {
         // Initial state of the graph where initial node distance is set to and the rest of nodes distance is set to infinity
@@ -28,8 +30,7 @@ export class Djikstra {
             this.weights.set(node, Infinity);
             this.unexplored.add(node);
         });
-        this.weights.set(this.startNode, 0);
-        
+			this.weights.set(this.startNode, 0);        
         // While loop to keep checking until all nodes have been visited
         while (this.unexplored.size) {
             let closestNode: Node | null = null;

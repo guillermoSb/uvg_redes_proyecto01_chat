@@ -107,7 +107,6 @@ export class XMPPChatDatasource implements ChatDatasource {
 	 * @param message 
 	 */
 	sendMessage(to: string, message: string): Promise<void> {
-		console.log('sending message', to)
 		return this.xmpp.send(xml('message', { to: to + '@alumchat.xyz', type: 'chat' }, xml('body', {}, message)));
 	}
 
